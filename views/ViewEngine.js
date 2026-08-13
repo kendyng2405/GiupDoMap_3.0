@@ -750,20 +750,34 @@ const views = {
 
         <!-- Tabs -->
         <style>
+          .sug-tab {
+            padding: 10px 18px;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            font-family: inherit;
+            font-size: .875rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all var(--t);
+          }
+          .sug-tab.active {
+            border-bottom: 2px solid var(--accent);
+            font-weight: 700;
+            color: var(--accent);
+          }
           .sug-tab .sug-badge { background:#9CA3AF; color:white; font-size:.68rem; padding:1px 6px; border-radius:999px; margin-left:4px; }
           .sug-tab.active .sug-badge { background:var(--accent); }
         </style>
         <div style="display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:0;">
-          <button class="sug-tab active" data-tab="pending"
-            style="padding:10px 18px;background:none;border:none;border-bottom:2px solid var(--accent);font-family:inherit;font-size:.875rem;font-weight:700;color:var(--accent);cursor:pointer;">
+          <button class="sug-tab active" data-tab="pending">
             Chờ duyệt <span class="sug-badge">${pending.length}</span>
           </button>
-          <button class="sug-tab" data-tab="approved"
-            style="padding:10px 18px;background:none;border:none;border-bottom:2px solid transparent;font-family:inherit;font-size:.875rem;font-weight:500;color:var(--text-muted);cursor:pointer;">
+          <button class="sug-tab" data-tab="approved">
             Đã duyệt (${approved.length})
           </button>
-          <button class="sug-tab" data-tab="rejected"
-            style="padding:10px 18px;background:none;border:none;border-bottom:2px solid transparent;font-family:inherit;font-size:.875rem;font-weight:500;color:var(--text-muted);cursor:pointer;">
+          <button class="sug-tab" data-tab="rejected">
             Từ chối (${rejected.length})
           </button>
         </div>
@@ -818,13 +832,34 @@ function _suggestionCard(s, status) {
   const isoDate = s.createdAt?.toDate ? s.createdAt.toDate().toISOString().split("T")[0] : "";
 
   const actionBtns = status === "pending" ? `
-    <button class="btn btn--sm btn-check-nearby" data-lat="${s.lat}" data-lng="${s.lng}" data-title="${s.title}" style="background:var(--bg2);color:var(--text1);border:1px solid var(--border);">Xem vị trí</button>
+    <div style="position:relative; display:inline-block;">
+      <button class="btn btn--sm btn-check-nearby" data-lat="${s.lat}" data-lng="${s.lng}" data-title="${s.title}" style="background:var(--bg2);color:var(--text1);border:1px solid var(--border);">Xem vị trí</button>
+      ${s.hasNearby ? `<span style="position:absolute;top:-4px;right:-4px;width:12px;height:12px;background:#EAB308;border-radius:50%;border:2px solid white;animation:pulse 2s infinite;"></span>` : ''}
+    </div>
     <button class="btn btn--sm btn-approve" data-id="${s.id}" style="min-width:80px;background:#22C55E;color:white;border:none;">Duyệt</button>
     <button class="btn btn--sm btn-reject" data-id="${s.id}" data-title="${s.title}" data-uid="${s.submittedBy}" style="background:#EF4444;color:white;border:none;">Từ chối</button>
     <button class="btn btn--sm btn-sug-delete" data-id="${s.id}" style="background:var(--bg2);color:var(--text-muted);border:1px solid var(--border);">Xóa</button>
   ` : status === "rejected" ? `
     <button class="btn btn--sm btn-sug-delete" data-id="${s.id}" style="background:var(--bg2);color:var(--text-muted);border:1px solid var(--border);">Xóa</button>
   ` : "";
+
+  let aiResultHtml = "";
+  if (status === "pending") {
+    if (s.aiResult) {
+      const isSafe = s.aiResult.isSafe;
+      const color = isSafe ? "#16A34A" : "#DC2626";
+      const bg = isSafe ? "rgba(34,197,94,.08)" : "rgba(239,68,68,.08)";
+      aiResultHtml = `<div id="ai-result-${s.id}" data-processed="true" style="margin-bottom:10px; padding:10px; border-radius:8px; font-size:0.85rem; background:${bg}; border:1px solid ${color}; color:${color};">
+        <strong>Đánh giá AI:</strong> ${s.aiResult.recommendation || "N/A"}<br>
+        <em style="display:block;margin-top:4px;">${s.aiResult.reasoning || "Không có lý do chi tiết"}</em>
+        ${s.aiResult.suggestedEdit ? `<div style="margin-top:8px;padding-top:8px;border-top:1px dashed ${color}50;font-size:0.8rem;"><strong>Gợi ý sửa đổi:</strong> ${s.aiResult.suggestedEdit}</div>` : ""}
+      </div>`;
+    } else {
+      aiResultHtml = `<div id="ai-result-${s.id}" style="margin-bottom:10px; padding:10px; border-radius:8px; font-size:0.85rem; background:rgba(139,92,246,.08); border:1px solid rgba(139,92,246,.2); color:#7C3AED;">
+        <span class="spinner"></span> Đang chờ AI phân tích tự động...
+      </div>`;
+    }
+  }
 
   return `
     <div class="card sug-row" data-id="${s.id}" data-date="${time}" data-isodate="${isoDate}" data-title="${encodeURIComponent(s.title || "")}" data-desc="${encodeURIComponent(s.description || "")}" style="overflow:hidden;">
@@ -841,9 +876,7 @@ function _suggestionCard(s, status) {
           </div>
           ${s.description ? `<p style="font-size:.82rem;color:var(--text2);margin-bottom:10px;line-height:1.6;">${s.description.substring(0, 200)}${s.description.length > 200 ? "..." : ""}</p>` : ""}
           
-          ${status === "pending" ? `<div id="ai-result-${s.id}" style="margin-bottom:10px; padding:10px; border-radius:8px; font-size:0.85rem; background:rgba(139,92,246,.08); border:1px solid rgba(139,92,246,.2); color:#7C3AED;">
-            <span class="spinner"></span> Đang chờ AI phân tích tự động...
-          </div>` : ""}
+          ${aiResultHtml}
 
           ${status === "rejected" && s.rejectedReason ? `
             <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:var(--radius);padding:8px 12px;margin-bottom:10px;font-size:.78rem;color:#DC2626;">

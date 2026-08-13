@@ -95,4 +95,10 @@ export const SuggestionModel = {
     }
     await deleteDoc(doc(db, "suggestions", id));
   },
+
+  async updateAiResult(id, aiResult) {
+    await updateDoc(doc(db, "suggestions", id), {
+      aiResult: aiResult,
+    });
+  }
 };

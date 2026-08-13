@@ -20,11 +20,19 @@ export const SuggestionController = {
 
   // GET /admin/suggestions — danh sách chờ duyệt (admin/founder)
   async showList({ userData }) {
-    const [pending, approved, rejected] = await Promise.all([
+    const [pending, approved, rejected, allLocs] = await Promise.all([
       SuggestionModel.findAll("pending"),
       SuggestionModel.findAll("approved"),
       SuggestionModel.findAll("rejected"),
+      LocationModel.getAll(),
     ]);
+
+    // Check for nearby duplicates for pending suggestions
+    pending.forEach(p => {
+      const dists = allLocs.map(loc => _haversine(p.lat, p.lng, loc.lat, loc.lng));
+      p.hasNearby = dists.some(d => d <= 0.5); // <= 500m
+    });
+
     renderView("admin-suggestions", { userData, pending, approved, rejected });
     _initSuggestionList(userData);
   },
@@ -334,9 +342,23 @@ async function _runAutoModeration() {
       resDiv.style.color = color;
       resDiv.innerHTML = `<strong>Đánh giá AI:</strong> ${data.recommendation || "N/A"}<br><em style="display:block;margin-top:4px;">${data.reasoning || "Không có lý do chi tiết"}</em>`;
       
+      if (data.suggestedEdit) {
+        resDiv.innerHTML += `<div style="margin-top:8px;padding-top:8px;border-top:1px dashed ${color}50;font-size:0.8rem;"><strong>Gợi ý sửa đổi:</strong> ${data.suggestedEdit}</div>`;
+      }
+      
       if (!isSafe && rejectBtn) {
         rejectBtn.dataset.aiReason = data.reasoning || "";
       }
+
+      // Save the AI result to Firebase so we don't have to fetch it again
+      SuggestionModel.updateAiResult(id, {
+        isSafe: data.isSafe,
+        recommendation: data.recommendation,
+        reasoning: data.reasoning,
+        suggestedEdit: data.suggestedEdit || null,
+        processedAt: new Date().toISOString()
+      }).catch(err => console.warn("Failed to save AI result", err));
+
     } catch(err) {
       resDiv.dataset.processed = "true";
       resDiv.style.background = "rgba(239,68,68,.08)";
