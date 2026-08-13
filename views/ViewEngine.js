@@ -851,7 +851,7 @@ const views = {
 // ── Helper: Suggestion card ──────────────────────────────
 function _suggestionCard(s, status) {
   const URGENCY_LABEL = { normal: "Bình thường", urgent: "Khẩn cấp", critical: "Rất khẩn" };
-  const urgencyColor = { normal: "#22C55E", urgent: "#EAB308", critical: "#EF4444" };
+  const urgencyColor = { normal: "#22C55E", urgent: "#EF4444", critical: "#B91C1C" };
   const uc = urgencyColor[s.urgency] || "#22C55E";
   const time = s.createdAt?.toDate ? s.createdAt.toDate().toLocaleDateString("vi-VN") : "";
   const isoDate = s.createdAt?.toDate ? s.createdAt.toDate().toISOString().split("T")[0] : "";
@@ -872,11 +872,13 @@ function _suggestionCard(s, status) {
   let aiResultHtml = "";
   if (status === "pending") {
     if (s.aiResult) {
+      const recommendation = s.aiResult.recommendation || "N/A";
+      const isRejected = recommendation.toLowerCase().includes("từ chối");
       const isSafe = s.aiResult.isSafe;
-      const color = isSafe ? "#16A34A" : "#DC2626";
-      const bg = isSafe ? "rgba(34,197,94,.08)" : "rgba(239,68,68,.08)";
+      const color = (!isSafe || isRejected) ? "#DC2626" : "#16A34A";
+      const bg = (!isSafe || isRejected) ? "rgba(239,68,68,.08)" : "rgba(34,197,94,.08)";
       aiResultHtml = `<div id="ai-result-${s.id}" data-processed="true" style="margin-bottom:10px; padding:10px; border-radius:8px; font-size:0.85rem; background:${bg}; border:1px solid ${color}; color:${color};">
-        <strong>Đánh giá AI:</strong> ${s.aiResult.recommendation || "N/A"}<br>
+        <strong>Đánh giá AI:</strong> ${recommendation}<br>
         <em style="display:block;margin-top:4px;">${s.aiResult.reasoning || "Không có lý do chi tiết"}</em>
         ${s.aiResult.suggestedEdit ? `<div style="margin-top:8px;padding-top:8px;border-top:1px dashed ${color}50;font-size:0.8rem;"><strong>Gợi ý sửa đổi:</strong> ${s.aiResult.suggestedEdit}</div>` : ""}
       </div>`;

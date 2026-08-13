@@ -30,7 +30,7 @@ export const SuggestionController = {
     // Check for nearby duplicates for pending suggestions
     pending.forEach(p => {
       const dists = allLocs.map(loc => _haversine(p.lat, p.lng, loc.lat, loc.lng));
-      p.hasNearby = dists.some(d => d <= 0.5); // <= 500m
+      p.hasNearby = dists.some(d => d <= 0.1); // <= 100m
     });
 
     renderView("admin-suggestions", { userData, pending, approved, rejected });
@@ -385,14 +385,17 @@ async function _runAutoModeration() {
         continue;
       }
       
+      let recommendation = data.recommendation || "N/A";
+      let isRejected = recommendation.toLowerCase().includes("từ chối");
       let isSafe = data.isSafe;
-      let color = isSafe ? "#16A34A" : "#DC2626";
-      let bg = isSafe ? "rgba(34,197,94,.08)" : "rgba(239,68,68,.08)";
+      
+      let color = (!isSafe || isRejected) ? "#DC2626" : "#16A34A";
+      let bg = (!isSafe || isRejected) ? "rgba(239,68,68,.08)" : "rgba(34,197,94,.08)";
       
       resDiv.style.background = bg;
       resDiv.style.border = "1px solid " + color;
       resDiv.style.color = color;
-      resDiv.innerHTML = `<strong>Đánh giá AI:</strong> ${data.recommendation || "N/A"}<br><em style="display:block;margin-top:4px;">${data.reasoning || "Không có lý do chi tiết"}</em>`;
+      resDiv.innerHTML = `<strong>Đánh giá AI:</strong> ${recommendation}<br><em style="display:block;margin-top:4px;">${data.reasoning || "Không có lý do chi tiết"}</em>`;
       
       if (data.suggestedEdit) {
         resDiv.innerHTML += `<div style="margin-top:8px;padding-top:8px;border-top:1px dashed ${color}50;font-size:0.8rem;"><strong>Gợi ý sửa đổi:</strong> ${data.suggestedEdit}</div>`;
@@ -498,9 +501,9 @@ async function _openNearbyModal(sugLat, sugLng, sugTitle) {
     .bindPopup(`<b style="color:#EF4444">Đề xuất mới</b><br>${sugTitle}`)
     .openPopup();
 
-  // Vẽ vòng tròn bán kính 500m
+  // Vẽ vùng tròn bán kính 100m
   L.circle([sugLat, sugLng], {
-    radius: 500,
+    radius: 100,
     color: "#EF4444",
     fillColor: "#EF4444",
     fillOpacity: 0.07,
@@ -508,13 +511,13 @@ async function _openNearbyModal(sugLat, sugLng, sugTitle) {
     dashArray: "5,5",
   }).addTo(_nearbyMap);
 
-  // Load tất cả địa điểm hiện có và tìm những cái gần < 500m
+  // Load tất cả địa điểm hiện có và tìm những cái gần < 100m
   const listEl = document.getElementById("nearby-list");
   listEl.innerHTML = `<p style="font-size:.8rem;color:var(--text2);">Đang tải địa điểm...</p>`;
 
   try {
     const locations = await LocationModel.findAll(false);
-    const RADIUS_KM = 0.5;
+    const RADIUS_KM = 0.1;
     const nearby = locations
       .map(loc => ({ ...loc, dist: _haversine(sugLat, sugLng, loc.lat, loc.lng) }))
       .filter(loc => loc.dist < RADIUS_KM)
@@ -547,7 +550,7 @@ async function _openNearbyModal(sugLat, sugLng, sugTitle) {
         <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;
           background:rgba(34,197,94,.1);border-radius:8px;border:1px solid rgba(34,197,94,.3);">
           <span style="color:#22C55E;font-size:1rem;">✓</span>
-          <span style="font-size:.85rem;color:var(--text1);">Không có địa điểm nào trong bán kính 500m. Vị trí này có thể duyệt.</span>
+          <span style="font-size:.85rem;color:var(--text1);">Không có địa điểm nào trong bán kính 100m. Vị trí này có thể duyệt.</span>
         </div>`;
     } else {
       const rows = nearby.map(loc => `
@@ -571,7 +574,7 @@ async function _openNearbyModal(sugLat, sugLng, sugTitle) {
           margin-bottom:12px;">
           <span style="color:#EF4444;font-size:1rem;">⚠</span>
           <span style="font-size:.85rem;color:var(--text1);">
-            Phát hiện <strong>${nearby.length}</strong> địa điểm trong bán kính 500m — kiểm tra trùng lặp trước khi duyệt.
+            Phát hiện <strong>${nearby.length}</strong> địa điểm trong bán kính 100m — kiểm tra trùng lặp trước khi duyệt.
           </span>
         </div>
         <div style="font-size:.8rem;font-weight:600;color:var(--text2);margin-bottom:4px;">
