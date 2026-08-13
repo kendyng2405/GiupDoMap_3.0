@@ -24,9 +24,7 @@ export const AdminController = {
     _initDashboardEvents(locations);
   },
 
-  async showAIModerator({ userData }) {
-    renderView("admin-ai-moderator", { userData });
-  },
+
 
   async showCreate({ userData }) {
     renderView("admin-location-form", { userData, location: null, helpTypes: HELP_TYPES, urgency: URGENCY });

@@ -410,13 +410,13 @@ const views = {
     `,
 
     // ---- ADMIN FORM (ĐÃ SỬA LỖI ESCAPE) ----
-    "admin-location-form": ({ location, helpTypes = HELP_TYPES, urgency = Object.entries(URGENCY_LABEL).map(([value, label]) => ({
+    "admin-location-form": ({ userData, location, helpTypes = HELP_TYPES, urgency = Object.entries(URGENCY_LABEL).map(([value, label]) => ({
         value,
         label,
         color: URGENCY_COLOR[value]
     })) }) => `
         <div class="admin-layout">
-            <aside class="admin-sidebar">${_adminNav(location ? "edit" : "new", "admin")}</aside>
+            <aside class="admin-sidebar">${_adminNav(location ? "edit" : "new", userData?.role)}</aside>
             <main class="admin-main">
                 <div class="admin-topbar">
                     <div>
@@ -626,15 +626,6 @@ const views = {
         </div>
     `,
 
-    "admin-ai-moderator": ({ userData }) => `
-        <div class="admin-layout">
-            <aside class="admin-sidebar">${_adminNav("ai-moderator", userData?.role)}</aside>
-            <main class="admin-main" style="padding:0; overflow:hidden;">
-                <iframe src="/ai-moderator/?t=${Date.now()}" style="width:100%; height:calc(100vh - 60px); border:none; display:block;"></iframe>
-            </main>
-        </div>
-    `,
-
   // ── FORM ĐỀ XUẤT ĐỊA ĐIỂM (member) ──────────────────────
   "suggest-form": ({ userData, helpTypes, urgency }) => `
     <div class="container pt-120 pb-80" style="max-width:820px;">
@@ -758,17 +749,35 @@ const views = {
         </div>
 
         <!-- Tabs -->
+        <style>
+          .sug-tab {
+            padding: 10px 18px;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            font-family: inherit;
+            font-size: .875rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all var(--t);
+          }
+          .sug-tab.active {
+            border-bottom: 2px solid var(--accent);
+            font-weight: 700;
+            color: var(--accent);
+          }
+          .sug-tab .sug-badge { background:#9CA3AF; color:white; font-size:.68rem; padding:1px 6px; border-radius:999px; margin-left:4px; }
+          .sug-tab.active .sug-badge { background:var(--accent); }
+        </style>
         <div style="display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:0;">
-          <button class="sug-tab active" data-tab="pending"
-            style="padding:10px 18px;background:none;border:none;border-bottom:2px solid var(--accent);font-family:inherit;font-size:.875rem;font-weight:700;color:var(--accent);cursor:pointer;">
-            Chờ duyệt <span style="background:var(--accent);color:white;font-size:.68rem;padding:1px 6px;border-radius:999px;margin-left:4px;">${pending.length}</span>
+          <button class="sug-tab active" data-tab="pending">
+            Chờ duyệt <span class="sug-badge">${pending.length}</span>
           </button>
-          <button class="sug-tab" data-tab="approved"
-            style="padding:10px 18px;background:none;border:none;border-bottom:2px solid transparent;font-family:inherit;font-size:.875rem;font-weight:500;color:var(--text-muted);cursor:pointer;">
+          <button class="sug-tab" data-tab="approved">
             Đã duyệt (${approved.length})
           </button>
-          <button class="sug-tab" data-tab="rejected"
-            style="padding:10px 18px;background:none;border:none;border-bottom:2px solid transparent;font-family:inherit;font-size:.875rem;font-weight:500;color:var(--text-muted);cursor:pointer;">
+          <button class="sug-tab" data-tab="rejected">
             Từ chối (${rejected.length})
           </button>
         </div>
@@ -788,16 +797,24 @@ const views = {
 
           <!-- Panel: Approved -->
           <div id="panel-approved" class="sug-panel" style="display:none;">
+            <div style="margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+              <label class="text-muted" style="font-size:0.85rem;">Lọc theo ngày:</label>
+              <input type="date" class="form-control filter-date" data-panel="approved" style="max-width:200px; padding:6px 12px; height:auto;">
+            </div>
             ${approved.length === 0
               ? `<div style="text-align:center;padding:48px;color:var(--text-muted);">Chưa có đề xuất nào được duyệt.</div>`
-              : `<div style="display:grid;gap:16px;">${approved.map(s => _suggestionCard(s, "approved")).join("")}</div>`}
+              : `<div class="sug-list" style="display:grid;gap:16px;">${approved.map(s => _suggestionCard(s, "approved")).join("")}</div>`}
           </div>
 
           <!-- Panel: Rejected -->
           <div id="panel-rejected" class="sug-panel" style="display:none;">
+            <div style="margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+              <label class="text-muted" style="font-size:0.85rem;">Lọc theo ngày:</label>
+              <input type="date" class="form-control filter-date" data-panel="rejected" style="max-width:200px; padding:6px 12px; height:auto;">
+            </div>
             ${rejected.length === 0
               ? `<div style="text-align:center;padding:48px;color:var(--text-muted);">Chưa có đề xuất nào bị từ chối.</div>`
-              : `<div style="display:grid;gap:16px;">${rejected.map(s => _suggestionCard(s, "rejected")).join("")}</div>`}
+              : `<div class="sug-list" style="display:grid;gap:16px;">${rejected.map(s => _suggestionCard(s, "rejected")).join("")}</div>`}
           </div>
         </div>
       </main>
@@ -808,34 +825,59 @@ const views = {
 
 // ── Helper: Suggestion card ──────────────────────────────
 function _suggestionCard(s, status) {
-  const urgencyLabel = { normal: "Bình thường", urgent: "Khẩn cấp", critical: "Rất khẩn" };
+  const URGENCY_LABEL = { normal: "Bình thường", urgent: "Khẩn cấp", critical: "Rất khẩn" };
   const urgencyColor = { normal: "#22C55E", urgent: "#EAB308", critical: "#EF4444" };
   const uc = urgencyColor[s.urgency] || "#22C55E";
   const time = s.createdAt?.toDate ? s.createdAt.toDate().toLocaleDateString("vi-VN") : "";
+  const isoDate = s.createdAt?.toDate ? s.createdAt.toDate().toISOString().split("T")[0] : "";
 
   const actionBtns = status === "pending" ? `
-    <button class="btn btn--sm btn-check-nearby" data-lat="${s.lat}" data-lng="${s.lng}" data-title="${s.title}" style="background:var(--bg2);color:var(--text1);border:1px solid var(--border);">Xem vị trí</button>
-    <button class="btn btn--primary btn--sm btn-approve" data-id="${s.id}" style="min-width:80px;">Duyệt</button>
-    <button class="btn btn--ghost btn--sm btn-reject" data-id="${s.id}" data-title="${s.title}" data-uid="${s.submittedBy}">Từ chối</button>
+    <div style="position:relative; display:inline-block;">
+      <button class="btn btn--sm btn-check-nearby" data-lat="${s.lat}" data-lng="${s.lng}" data-title="${s.title}" style="background:var(--bg2);color:var(--text1);border:1px solid var(--border);">Xem vị trí</button>
+      ${s.hasNearby ? `<span style="position:absolute;top:-4px;right:-4px;width:12px;height:12px;background:#EAB308;border-radius:50%;border:2px solid white;animation:pulse 2s infinite;"></span>` : ''}
+    </div>
+    <button class="btn btn--sm btn-approve" data-id="${s.id}" style="min-width:80px;background:#22C55E;color:white;border:none;">Duyệt</button>
+    <button class="btn btn--sm btn-reject" data-id="${s.id}" data-title="${s.title}" data-uid="${s.submittedBy}" style="background:#EF4444;color:white;border:none;">Từ chối</button>
     <button class="btn btn--sm btn-sug-delete" data-id="${s.id}" style="background:var(--bg2);color:var(--text-muted);border:1px solid var(--border);">Xóa</button>
   ` : status === "rejected" ? `
     <button class="btn btn--sm btn-sug-delete" data-id="${s.id}" style="background:var(--bg2);color:var(--text-muted);border:1px solid var(--border);">Xóa</button>
   ` : "";
 
+  let aiResultHtml = "";
+  if (status === "pending") {
+    if (s.aiResult) {
+      const isSafe = s.aiResult.isSafe;
+      const color = isSafe ? "#16A34A" : "#DC2626";
+      const bg = isSafe ? "rgba(34,197,94,.08)" : "rgba(239,68,68,.08)";
+      aiResultHtml = `<div id="ai-result-${s.id}" data-processed="true" style="margin-bottom:10px; padding:10px; border-radius:8px; font-size:0.85rem; background:${bg}; border:1px solid ${color}; color:${color};">
+        <strong>Đánh giá AI:</strong> ${s.aiResult.recommendation || "N/A"}<br>
+        <em style="display:block;margin-top:4px;">${s.aiResult.reasoning || "Không có lý do chi tiết"}</em>
+        ${s.aiResult.suggestedEdit ? `<div style="margin-top:8px;padding-top:8px;border-top:1px dashed ${color}50;font-size:0.8rem;"><strong>Gợi ý sửa đổi:</strong> ${s.aiResult.suggestedEdit}</div>` : ""}
+      </div>`;
+    } else {
+      aiResultHtml = `<div id="ai-result-${s.id}" style="margin-bottom:10px; padding:10px; border-radius:8px; font-size:0.85rem; background:rgba(139,92,246,.08); border:1px solid rgba(139,92,246,.2); color:#7C3AED;">
+        <span class="spinner"></span> Đang chờ AI phân tích tự động...
+      </div>`;
+    }
+  }
+
   return `
-    <div class="card" style="overflow:hidden;">
+    <div class="card sug-row" data-id="${s.id}" data-date="${time}" data-isodate="${isoDate}" data-title="${encodeURIComponent(s.title || "")}" data-desc="${encodeURIComponent(s.description || "")}" style="overflow:hidden;">
       <div style="display:grid;grid-template-columns:${s.imageUrl ? "200px 1fr" : "1fr"};gap:0;">
-        ${s.imageUrl ? `<img src="${s.imageUrl}" style="width:200px;height:100%;min-height:160px;object-fit:cover;" alt="">` : ""}
+        ${s.imageUrl ? `<img src="${s.imageUrl}" style="width:200px;height:100%;max-height:200px;object-fit:cover;cursor:pointer;" alt="" onclick="document.getElementById('global-img-view').src=this.src; document.getElementById('global-img-modal').style.display='flex';">` : ""}
         <div style="padding:18px 20px;">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px;">
             <h3 style="font-size:1rem;margin:0;">${s.title}</h3>
-            <span class="badge" style="background:${uc}20;color:${uc};flex-shrink:0;">${urgencyLabel[s.urgency] || ""}</span>
+            <span class="badge" style="background:${uc}20;color:${uc};flex-shrink:0;">${URGENCY_LABEL[s.urgency] || ""}</span>
           </div>
           <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:8px;">
-            Đề xuất bởi: <strong>${s.submitterName || "Ẩn danh"}</strong> · ${time}
+            Đề xuất bởi: <a href="javascript:void(0)" class="view-user-info" data-uid="${s.submittedBy}" style="font-weight:600; text-decoration:underline;">${s.submitterName || "Ẩn danh"}</a> · ${time}
             ${s.address ? ` · 📍 ${s.address}` : ""}
           </div>
           ${s.description ? `<p style="font-size:.82rem;color:var(--text2);margin-bottom:10px;line-height:1.6;">${s.description.substring(0, 200)}${s.description.length > 200 ? "..." : ""}</p>` : ""}
+          
+          ${aiResultHtml}
+
           ${status === "rejected" && s.rejectedReason ? `
             <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:var(--radius);padding:8px 12px;margin-bottom:10px;font-size:.78rem;color:#DC2626;">
               Lý do từ chối: ${s.rejectedReason}
@@ -860,7 +902,7 @@ function _adminNav(active, role = "admin") {
         { id: "dashboard", href: "/admin/dashboard", label: "Bảng điều khiển", icon: `<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>` },
         { id: "new", href: "/admin/locations/new", label: "Thêm địa điểm", icon: `<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>` },
         { id: "suggestions", href: "/admin/suggestions", label: "Đề xuất", icon: `<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>` },
-        { id: "ai-moderator", href: "/admin/ai-moderator", label: "AI Moderator", icon: `<path d="M12 2l3 7 7 3-7 3-3 7-3-7-7-3 7-3z"/>` },
+
         ...(isFounder ? [{ id: "users", href: "/admin/users", label: "Quản lý người dùng", icon: `<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>` }] : []),
         { id: "home-link", href: "/home", label: "Xem bản đồ", icon: `<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>` },
         { id: "profile-link", href: "/profile", label: "Hồ sơ", icon: `<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>` },
