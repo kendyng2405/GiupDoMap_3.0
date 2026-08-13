@@ -17,7 +17,6 @@ router
   .register("/admin/locations/new",      router.requireAdmin((ctx) => AdminController.showCreate(ctx)))
   .register("/admin/locations/:id/edit", router.requireAdmin((ctx) => AdminController.showEdit(ctx)))
   .register("/admin/suggestions",        router.requireAdmin((ctx) => SuggestionController.showList(ctx)))
-  .register("/admin/ai-moderator",       router.requireAdmin((ctx) => AdminController.showAIModerator(ctx)))
   .register("/admin/users",              router.requireFounder((ctx) => AdminController.showUsers(ctx)));
 
 document.addEventListener("click", (e) => {

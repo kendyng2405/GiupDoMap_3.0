@@ -161,6 +161,33 @@ function _initSuggestionList(currentUserData) {
     const rejectBtn  = e.target.closest(".btn-reject");
     const deleteBtn  = e.target.closest(".btn-sug-delete");
     const checkBtn   = e.target.closest(".btn-check-nearby");
+    const aiBtn      = e.target.closest(".btn-ai-check");
+    const userLink   = e.target.closest(".view-user-info");
+
+    // Xem thông tin người dùng
+    if (userLink) {
+      const uid = userLink.dataset.uid;
+      try {
+        const u = await UserModel.findById(uid);
+        if (u) {
+          const rankName = u.rank?.name || 'Đồng Lòng';
+          document.getElementById('global-user-info').innerHTML = `
+            <p style="margin-bottom:8px;"><strong>Tên:</strong> ${u.fullName || 'Ẩn danh'}</p>
+            <p style="margin-bottom:8px;"><strong>Email:</strong> ${u.email || 'N/A'}</p>
+            <p style="margin-bottom:8px;"><strong>Số điện thoại:</strong> ${u.phone || 'N/A'}</p>
+            <p style="margin-bottom:8px;"><strong>Cấp bậc:</strong> <span style="font-weight:600;color:var(--accent);">${rankName}</span></p>
+            <p style="margin-bottom:8px;"><strong>Điểm uy tín:</strong> <span style="font-weight:bold;">${u.points || 0}</span></p>
+          `;
+          document.getElementById('global-user-modal').style.display = 'flex';
+        }
+      } catch(err) {
+        Toast.show("Không thể lấy thông tin người dùng", "error");
+      }
+      return;
+    }
+
+    // (AI btn removed)
+
 
     // FIX: Kiểm tra trùng lặp — mở map xem vị trí gần
     if (checkBtn) {
@@ -220,7 +247,8 @@ function _initSuggestionList(currentUserData) {
       const id    = rejectBtn.dataset.id;
       const title = rejectBtn.dataset.title;
       const toUid = rejectBtn.dataset.uid;
-      _openRejectModal(id, title, toUid, currentUserData);
+      const aiReason = rejectBtn.dataset.aiReason || "";
+      _openRejectModal(id, title, toUid, currentUserData, aiReason);
       return;
     }
 
@@ -229,9 +257,94 @@ function _initSuggestionList(currentUserData) {
       if (!confirm("Xóa đề xuất này?")) return;
       await SuggestionModel.delete(id);
       deleteBtn.closest("tr")?.remove();
+      deleteBtn.closest(".sug-row")?.remove(); // also remove card if exists
       Toast.show("Đã xóa đề xuất.");
     }
   });
+
+  // Filter by Date logic
+  document.querySelectorAll(".filter-date").forEach(input => {
+    input.addEventListener("change", e => {
+      const panelId = e.target.dataset.panel;
+      const selectedDate = e.target.value; // YYYY-MM-DD
+      const panel = document.getElementById("panel-" + panelId);
+      if (!panel) return;
+      const rows = panel.querySelectorAll(".sug-row");
+      
+      if (!selectedDate) {
+        rows.forEach(r => r.style.display = "block");
+        return;
+      }
+      
+      rows.forEach(r => {
+        if (r.dataset.isodate === selectedDate) {
+          r.style.display = "block";
+        } else {
+          r.style.display = "none";
+        }
+      });
+    });
+  });
+
+  // Run AI Moderation automatically for pending suggestions
+  _runAutoModeration();
+}
+
+async function _runAutoModeration() {
+  const panel = document.getElementById("panel-pending");
+  if (!panel) return;
+  const cards = panel.querySelectorAll(".sug-row");
+  
+  for (let card of cards) {
+    const id = card.dataset.id;
+    const title = decodeURIComponent(card.dataset.title || "");
+    const desc = decodeURIComponent(card.dataset.desc || "");
+    const resDiv = document.getElementById("ai-result-" + id);
+    const rejectBtn = card.querySelector(".btn-reject");
+    
+    if (!resDiv || resDiv.dataset.processed === "true") continue;
+    
+    const text = title + "\\n\\n" + desc;
+    resDiv.style.display = "block";
+    
+    try {
+      const res = await fetch("/api/moderate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+      });
+      const data = await res.json();
+      
+      resDiv.dataset.processed = "true";
+      
+      if (data.error) {
+        resDiv.style.background = "rgba(239,68,68,.08)";
+        resDiv.style.border = "1px solid #DC2626";
+        resDiv.style.color = "#DC2626";
+        resDiv.innerHTML = `<strong>Lỗi AI:</strong> ${data.error}`;
+        continue;
+      }
+      
+      let isSafe = data.isSafe;
+      let color = isSafe ? "#16A34A" : "#DC2626";
+      let bg = isSafe ? "rgba(34,197,94,.08)" : "rgba(239,68,68,.08)";
+      
+      resDiv.style.background = bg;
+      resDiv.style.border = "1px solid " + color;
+      resDiv.style.color = color;
+      resDiv.innerHTML = `<strong>Đánh giá AI:</strong> ${data.recommendation || "N/A"}<br><em style="display:block;margin-top:4px;">${data.reasoning || "Không có lý do chi tiết"}</em>`;
+      
+      if (!isSafe && rejectBtn) {
+        rejectBtn.dataset.aiReason = data.reasoning || "";
+      }
+    } catch(err) {
+      resDiv.dataset.processed = "true";
+      resDiv.style.background = "rgba(239,68,68,.08)";
+      resDiv.style.border = "1px solid #DC2626";
+      resDiv.style.color = "#DC2626";
+      resDiv.innerHTML = `<strong>Lỗi phân tích AI:</strong> ${err.message}`;
+    }
+  }
 }
 
 // ── Kiểm tra địa điểm gần (FIX #NEW) ─────────────────────
@@ -397,7 +510,7 @@ async function _openNearbyModal(sugLat, sugLng, sugTitle) {
   }
 }
 
-function _openRejectModal(sugId, title, submitterUid, currentUserData) {
+function _openRejectModal(sugId, title, submitterUid, currentUserData, aiReason = "") {
   let modal = document.getElementById("reject-modal");
   if (!modal) {
     modal = document.createElement("div");
@@ -428,7 +541,7 @@ function _openRejectModal(sugId, title, submitterUid, currentUserData) {
   }
 
   document.getElementById("reject-sug-title").textContent = title;
-  document.getElementById("reject-reason").value = "";
+  document.getElementById("reject-reason").value = aiReason;
   modal.style.display = "flex";
 
   const close = () => { modal.style.display = "none"; };

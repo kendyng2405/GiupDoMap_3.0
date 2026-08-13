@@ -30,6 +30,9 @@
       <span id="nav-admin" style="display:none;">
         <a href="/admin/dashboard" class="nav-link" data-nav="/admin/dashboard">Quản Trị</a>
       </span>
+      <span id="nav-founder-users" style="display:none;">
+        <a href="/admin/users" class="nav-link" data-nav="/admin/users">Người dùng</a>
+      </span>
       <!-- Chỉ hiển thị cho member (không phải admin/founder) -->
       <span id="nav-user-link" style="display:none;">
         <a href="/profile" class="nav-link" data-nav="/profile">Hồ sơ</a>
@@ -152,12 +155,14 @@
     const guestEl        = document.getElementById('nav-guest');
     const userEl         = document.getElementById('nav-user');
     const adminEl        = document.getElementById('nav-admin');
+    const founderUsersEl = document.getElementById('nav-founder-users');
     const userLinkEl     = document.getElementById('nav-user-link');
     const adminProfileEl = document.getElementById('nav-admin-profile');
 
     if (guestEl)        guestEl.style.display        = isLoggedIn ? 'none'   : 'flex';
     if (userEl)         userEl.style.display         = isLoggedIn ? 'flex'   : 'none';
     if (adminEl)        adminEl.style.display        = isPriv     ? 'inline' : 'none';
+    if (founderUsersEl) founderUsersEl.style.display = isFounder  ? 'inline' : 'none';
     // "Đề xuất địa điểm" chỉ hiện cho member thường (không phải admin/founder)
     if (userLinkEl)     userLinkEl.style.display     = (isLoggedIn && !isPriv) ? 'inline' : 'none';
     // Hồ sơ cho admin/founder
@@ -194,16 +199,7 @@
       if (rankEl) rankEl.textContent = roleLabel;
       if (mobRankEl) mobRankEl.textContent = roleLabel;
 
-      // Founder: inject users nav link once
-      if (isFounder && !document.getElementById('nav-founder-users')) {
-        const span = document.createElement('span');
-        span.id = 'nav-founder-users';
-        span.innerHTML = '<a href="/admin/users" class="nav-link" data-nav="/admin/users">Người dùng</a>';
-        const adminSpan = document.getElementById('nav-admin');
-        if (adminSpan && adminSpan.nextSibling) {
-          adminSpan.parentNode.insertBefore(span, adminSpan.nextSibling);
-        }
-      }
+
 
       // Khởi động Notification Controller
       import('/controllers/NotificationController.js').then(m => {
@@ -224,6 +220,26 @@
   };
 
 </script>
+
+<!-- Global Image Modal -->
+<div id="global-img-modal" class="modal-backdrop" style="display:none; z-index: 9999;" onclick="this.style.display='none'">
+  <div class="modal-content" style="max-width:90vw; max-height:90vh; padding:0; background:transparent; box-shadow:none; display:flex; justify-content:center; align-items:center;">
+    <img id="global-img-view" src="" style="max-width:100%; max-height:90vh; border-radius:8px; object-fit:contain;">
+  </div>
+</div>
+
+<!-- Global User Info Modal -->
+<div id="global-user-modal" class="modal-backdrop" style="display:none; z-index: 9999;" onclick="if(event.target===this) this.style.display='none'">
+  <div class="modal-content" style="max-width:400px;">
+    <h3 style="margin-bottom:15px; font-family:'Playfair Display',serif; font-size:1.5rem;">Thông tin người dùng</h3>
+    <div id="global-user-info" style="line-height:1.8; font-size:0.95rem;">
+      <!-- content filled by JS -->
+    </div>
+    <div style="margin-top:20px; text-align:right;">
+      <button class="btn btn--ghost" onclick="document.getElementById('global-user-modal').style.display='none'">Đóng</button>
+    </div>
+  </div>
+</div>
 
 <script type="module" src="/app.js"></script>
 </body>
