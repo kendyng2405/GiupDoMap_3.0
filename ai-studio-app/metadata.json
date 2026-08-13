@@ -1,0 +1,6 @@
+{
+  "name": "Trái Tim Việt - AI Moderator",
+  "description": "Ứng dụng AI kiểm duyệt nội dung phản cảm/lừa đảo và tóm tắt 3 gạch đầu dòng cho Admin Dự án Trái Tim Việt.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

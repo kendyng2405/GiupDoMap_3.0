@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Trái Tim Việt</title>
+  <script>
+    // GitHub Pages SPA trick — lưu URL gốc vào sessionStorage
+    // Router.js sẽ đọc và restore lại đúng path
+    sessionStorage.setItem("spa_redirect", window.location.href);
+    window.location.replace("/");
+  </script>
+</head>
+<body></body>
+</html>
