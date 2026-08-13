@@ -169,6 +169,7 @@ function _initSuggestionList(currentUserData) {
     const rejectBtn  = e.target.closest(".btn-reject");
     const deleteBtn  = e.target.closest(".btn-sug-delete");
     const checkBtn   = e.target.closest(".btn-check-nearby");
+    const editBtn    = e.target.closest(".btn-edit-sug");
     const aiBtn      = e.target.closest(".btn-ai-check");
     const userLink   = e.target.closest(".view-user-info");
 
@@ -191,6 +192,29 @@ function _initSuggestionList(currentUserData) {
       } catch(err) {
         Toast.show("Không thể lấy thông tin người dùng", "error");
       }
+      return;
+    }
+
+    // Edit Suggestion
+    if (editBtn) {
+      const id = editBtn.dataset.id;
+      const title = decodeURIComponent(editBtn.dataset.title || "");
+      const desc = decodeURIComponent(editBtn.dataset.desc || "");
+      const aiHint = decodeURIComponent(editBtn.dataset.ai || "");
+
+      document.getElementById("edit-sug-id").value = id;
+      document.getElementById("edit-sug-title").value = title;
+      document.getElementById("edit-sug-desc").value = desc;
+
+      const aiHintEl = document.getElementById("edit-sug-ai-hint");
+      if (aiHint) {
+        aiHintEl.innerHTML = "<strong>Gợi ý từ AI:</strong> " + aiHint;
+        aiHintEl.style.display = "block";
+      } else {
+        aiHintEl.style.display = "none";
+      }
+
+      document.getElementById("modal-edit-sug").style.display = "flex";
       return;
     }
 
@@ -292,6 +316,34 @@ function _initSuggestionList(currentUserData) {
         }
       });
     });
+  });
+
+  // Save Edited Suggestion
+  document.getElementById("btn-save-edit-sug")?.addEventListener("click", async () => {
+    const id = document.getElementById("edit-sug-id").value;
+    const title = document.getElementById("edit-sug-title").value.trim();
+    const desc = document.getElementById("edit-sug-desc").value.trim();
+
+    if (!title || !desc) {
+      Toast.show("Vui lòng nhập đủ tiêu đề và mô tả", "error");
+      return;
+    }
+
+    const btn = document.getElementById("btn-save-edit-sug");
+    btn.disabled = true;
+    btn.textContent = "Đang lưu...";
+
+    try {
+      await SuggestionModel.update(id, { title, description: desc });
+      document.getElementById("modal-edit-sug").style.display = "none";
+      Toast.show("Cập nhật đề xuất thành công!");
+      router.navigate("/admin/suggestions"); // reload the page
+    } catch(err) {
+      Toast.show("Lỗi cập nhật: " + err.message, "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Lưu thay đổi";
+    }
   });
 
   // Run AI Moderation automatically for pending suggestions

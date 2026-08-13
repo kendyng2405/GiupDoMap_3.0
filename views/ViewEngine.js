@@ -818,6 +818,31 @@ const views = {
           </div>
         </div>
       </main>
+
+      <!-- Modal Sửa Đề Xuất -->
+      <div id="modal-edit-sug" class="modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+        <div style="background:white;border-radius:12px;padding:24px;width:100%;max-width:500px;">
+          <h3 style="margin-top:0;margin-bottom:16px;">Sửa đề xuất</h3>
+          <div id="edit-sug-ai-hint" style="background:#FEF3C7;color:#92400E;padding:12px;border-radius:8px;font-size:0.85rem;margin-bottom:16px;display:none;"></div>
+          <input type="hidden" id="edit-sug-id">
+          
+          <div style="margin-bottom:12px;">
+            <label style="display:block;font-size:0.85rem;font-weight:600;margin-bottom:4px;color:var(--text2);">Tiêu đề</label>
+            <input type="text" id="edit-sug-title" class="form-control" style="width:100%;">
+          </div>
+          
+          <div style="margin-bottom:16px;">
+            <label style="display:block;font-size:0.85rem;font-weight:600;margin-bottom:4px;color:var(--text2);">Mô tả hoàn cảnh</label>
+            <textarea id="edit-sug-desc" class="form-control" style="width:100%;height:100px;resize:vertical;"></textarea>
+          </div>
+          
+          <div style="display:flex;gap:12px;justify-content:flex-end;">
+            <button class="btn" style="background:var(--bg2);" onclick="document.getElementById('modal-edit-sug').style.display='none'">Hủy</button>
+            <button id="btn-save-edit-sug" class="btn btn--primary">Lưu thay đổi</button>
+          </div>
+        </div>
+      </div>
+
     </div>`,
 
 
@@ -836,6 +861,7 @@ function _suggestionCard(s, status) {
       <button class="btn btn--sm btn-check-nearby" data-lat="${s.lat}" data-lng="${s.lng}" data-title="${s.title}" style="background:var(--bg2);color:var(--text1);border:1px solid var(--border);">Xem vị trí</button>
       ${s.hasNearby ? `<span style="position:absolute;top:-4px;right:-4px;width:12px;height:12px;background:#EAB308;border-radius:50%;border:2px solid white;animation:pulse 2s infinite;"></span>` : ''}
     </div>
+    <button class="btn btn--sm btn-edit-sug" data-id="${s.id}" data-title="${encodeURIComponent(s.title || "")}" data-desc="${encodeURIComponent(s.description || "")}" data-ai="${encodeURIComponent(s.aiResult?.suggestedEdit || "")}" style="background:var(--bg2);color:var(--text1);border:1px solid var(--border);">Sửa</button>
     <button class="btn btn--sm btn-approve" data-id="${s.id}" style="min-width:80px;background:#22C55E;color:white;border:none;">Duyệt</button>
     <button class="btn btn--sm btn-reject" data-id="${s.id}" data-title="${s.title}" data-uid="${s.submittedBy}" style="background:#EF4444;color:white;border:none;">Từ chối</button>
     <button class="btn btn--sm btn-sug-delete" data-id="${s.id}" style="background:var(--bg2);color:var(--text-muted);border:1px solid var(--border);">Xóa</button>
