@@ -279,7 +279,7 @@ function _initSuggestionList(currentUserData) {
       const id    = rejectBtn.dataset.id;
       const title = rejectBtn.dataset.title;
       const toUid = rejectBtn.dataset.uid;
-      const aiReason = rejectBtn.dataset.aiReason || "";
+      const aiReason = rejectBtn.dataset.aiReason ? decodeURIComponent(rejectBtn.dataset.aiReason) : "";
       _openRejectModal(id, title, toUid, currentUserData, aiReason);
       return;
     }
@@ -401,8 +401,8 @@ async function _runAutoModeration() {
         resDiv.innerHTML += `<div style="margin-top:8px;padding-top:8px;border-top:1px dashed ${color}50;font-size:0.8rem;"><strong>Gợi ý sửa đổi:</strong> ${data.suggestedEdit}</div>`;
       }
       
-      if (!isSafe && rejectBtn) {
-        rejectBtn.dataset.aiReason = data.reasoning || "";
+      if (rejectBtn && data.reasoning) {
+        rejectBtn.dataset.aiReason = encodeURIComponent(data.reasoning);
       }
 
       // Save the AI result to Firebase so we don't have to fetch it again

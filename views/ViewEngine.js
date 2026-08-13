@@ -863,7 +863,7 @@ function _suggestionCard(s, status) {
     </div>
     <button class="btn btn--sm btn-edit-sug" data-id="${s.id}" data-title="${encodeURIComponent(s.title || "")}" data-desc="${encodeURIComponent(s.description || "")}" data-ai="${encodeURIComponent(s.aiResult?.suggestedEdit || "")}" style="background:var(--bg2);color:var(--text1);border:1px solid var(--border);">Sửa</button>
     <button class="btn btn--sm btn-approve" data-id="${s.id}" style="min-width:80px;background:#22C55E;color:white;border:none;">Duyệt</button>
-    <button class="btn btn--sm btn-reject" data-id="${s.id}" data-title="${s.title}" data-uid="${s.submittedBy}" style="background:#EF4444;color:white;border:none;">Từ chối</button>
+    <button class="btn btn--sm btn-reject" data-id="${s.id}" data-title="${s.title}" data-uid="${s.submittedBy}" data-ai-reason="${encodeURIComponent(s.aiResult?.reasoning || "")}" style="background:#EF4444;color:white;border:none;">Từ chối</button>
     <button class="btn btn--sm btn-sug-delete" data-id="${s.id}" style="background:var(--bg2);color:var(--text-muted);border:1px solid var(--border);">Xóa</button>
   ` : status === "rejected" ? `
     <button class="btn btn--sm btn-sug-delete" data-id="${s.id}" style="background:var(--bg2);color:var(--text-muted);border:1px solid var(--border);">Xóa</button>
