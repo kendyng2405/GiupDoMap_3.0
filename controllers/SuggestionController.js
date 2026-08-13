@@ -625,6 +625,8 @@ function _openRejectModal(sugId, title, submitterUid, currentUserData, aiReason 
 
   const oldBtn = document.getElementById("reject-confirm-btn");
   const newBtn = oldBtn.cloneNode(true);
+  newBtn.disabled = false;
+  newBtn.textContent = "Xác nhận từ chối";
   oldBtn.parentNode.replaceChild(newBtn, oldBtn);
 
   newBtn.onclick = async () => {
