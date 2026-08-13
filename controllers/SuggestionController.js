@@ -24,7 +24,7 @@ export const SuggestionController = {
       SuggestionModel.findAll("pending"),
       SuggestionModel.findAll("approved"),
       SuggestionModel.findAll("rejected"),
-      LocationModel.getAll(),
+      LocationModel.findAll(),
     ]);
 
     // Check for nearby duplicates for pending suggestions
