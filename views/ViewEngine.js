@@ -29,6 +29,13 @@ export function renderView(name, data = {}) {
 
     const html = views[name]?.(data) || `<div class="container pt-120"><h1>Không tìm thấy trang</h1></div>`;
     app.innerHTML = html;
+
+    // Toggle body class for mobile map viewport lock
+    if (name === "home") {
+        document.body.classList.add("map-active");
+    } else {
+        document.body.classList.remove("map-active");
+    }
 }
 
 const views = {

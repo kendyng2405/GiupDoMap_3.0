@@ -611,12 +611,18 @@ textarea.form-control { resize:vertical; min-height:90px; }
 /* ---- Mobile map viewport fix ---- */
 @media (max-width: 600px) {
   /* Lock body scroll only on map page */
-  body:has(.map-wrap) {
-    overflow: hidden;
+  body.map-active {
+    overflow: hidden !important;
     height: 100vh;
     height: 100dvh;
     position: fixed;
     width: 100%;
+    touch-action: none;
+  }
+  body.map-active #app {
+    height: calc(100vh - 66px);
+    height: calc(100dvh - 66px);
+    overflow: hidden;
   }
   .map-wrap {
     position: fixed;
