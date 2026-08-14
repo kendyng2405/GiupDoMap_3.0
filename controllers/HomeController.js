@@ -204,7 +204,7 @@ function _openSidebar(loc, user, userData, sidebar) {
     </div>
     <div class="urgency-strip" style="background:${uc}"></div>
     ${loc.imageUrl
-      ? `<img src="${loc.imageUrl}" class="sidebar-img" alt="${loc.title}" loading="lazy">`
+      ? `<img src="${loc.imageUrl}" class="sidebar-img" alt="${loc.title}" loading="lazy" style="cursor:pointer;" onclick="document.getElementById('global-img-view').src=this.src;document.getElementById('global-img-modal').style.display='flex';">`
       : `<div class="sidebar-img-placeholder">Chưa có ảnh</div>`}
     <h2 class="sidebar-loc-title">${loc.title}</h2>
     <div class="sidebar-badges">
