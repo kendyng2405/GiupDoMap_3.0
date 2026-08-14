@@ -96,9 +96,9 @@ const views = {
                 </div>
                 
                 <div class="form-group" style="margin-bottom: 20px;">
-                    <label style="display:block; margin-bottom:5px; font-size:0.85rem; font-weight:600;">Quận/Huyện</label>
+                    <label style="display:block; margin-bottom:5px; font-size:0.85rem; font-weight:600;">PHƯỜNG/XÃ/ĐẶC KHU</label>
                     <select id="filter-district" class="form-control" disabled style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--bg); color:var(--text);">
-                        <option value="">Tất cả quận huyện</option>
+                        <option value="">Tất cả Phường/Xã/Đặc khu</option>
                     </select>
                 </div>
                 

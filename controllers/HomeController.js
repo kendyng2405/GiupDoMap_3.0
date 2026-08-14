@@ -73,7 +73,7 @@ function _initFilterAndLocate() {
     if (!provincesData) {
       try {
         provSelect.innerHTML = '<option value="">Đang tải...</option>';
-        const res = await fetch("/data/provinces.json");
+        const res = await fetch("/public/data/provinces.json");
         provincesData = await res.json();
         provSelect.innerHTML = '<option value="">Tất cả tỉnh thành</option>';
         provincesData.forEach(p => {
