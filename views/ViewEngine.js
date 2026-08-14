@@ -72,12 +72,42 @@ const views = {
                 <div style="width:1px;height:16px;background:var(--border);margin:0 4px;"></div>
                 
                 <button class="filter-chip active" data-filter="all">Tất cả</button>
+                <button class="filter-chip" id="region-filter-btn" style="border: 1px dashed var(--border); background: var(--bg2);">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:2px"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                    Khu vực
+                </button>
+                <div style="width:1px;height:16px;background:var(--border);margin:0 4px;"></div>
                 <button class="filter-chip" data-filter="critical"><span class="dot" style="background:#EF4444"></span>Rất khẩn</button>
                 <button class="filter-chip" data-filter="urgent"><span class="dot" style="background:#EAB308"></span>Khẩn cấp</button>
                 <button class="filter-chip" data-filter="normal"><span class="dot" style="background:#22C55E"></span>Bình thường</button>
             </div>
             
             <div class="map-sidebar" id="map-sidebar"></div>
+            
+            <div id="region-filter-modal" class="modal-backdrop" style="display:none; z-index: 10000;" onclick="if(event.target===this) this.style.display='none'">
+              <div class="modal-box" style="width: 90%; max-width: 400px; padding: 20px;">
+                <h3 style="margin-bottom:15px; font-family:'Playfair Display',serif; font-size:1.3rem;">Lọc theo khu vực</h3>
+                
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label style="display:block; margin-bottom:5px; font-size:0.85rem; font-weight:600;">Tỉnh/Thành phố</label>
+                    <select id="filter-province" class="form-control" style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--bg); color:var(--text);">
+                        <option value="">Tất cả tỉnh thành</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label style="display:block; margin-bottom:5px; font-size:0.85rem; font-weight:600;">Quận/Huyện</label>
+                    <select id="filter-district" class="form-control" disabled style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--bg); color:var(--text);">
+                        <option value="">Tất cả quận huyện</option>
+                    </select>
+                </div>
+                
+                <div style="display:flex; gap:10px; justify-content:flex-end;">
+                  <button class="btn btn--ghost" id="region-filter-clear">Xóa lọc</button>
+                  <button class="btn btn--primary" id="region-filter-apply">Áp dụng</button>
+                </div>
+              </div>
+            </div>
         </div>
     `,
 

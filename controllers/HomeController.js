@@ -8,6 +8,30 @@ let mapInstance = null;
 let markersLayer = [];
 let userLocationLayer = null; // track user pin để xóa khi bấm lại
 
+let currentUrgency = "all";
+let currentProvince = "";
+let currentDistrict = "";
+
+function applyFilters() {
+  if (!mapInstance) return;
+  let visibleCount = 0;
+  markersLayer.forEach(({ marker, loc }) => {
+    const matchUrgency = currentUrgency === "all" || loc.urgency === currentUrgency;
+    let matchRegion = true;
+    if (currentProvince) {
+      matchRegion = (loc.address || "").toLowerCase().includes(currentProvince.toLowerCase());
+      if (matchRegion && currentDistrict) {
+        matchRegion = (loc.address || "").toLowerCase().includes(currentDistrict.toLowerCase());
+      }
+    }
+    const show = matchUrgency && matchRegion;
+    show ? marker.addTo(mapInstance) : mapInstance.removeLayer(marker);
+    if (show) visibleCount++;
+  });
+  const badge = document.getElementById("map-count-badge");
+  if (badge) badge.textContent = `${visibleCount} địa điểm`;
+}
+
 export const HomeController = {
   async show({ user, userData }) {
     renderView("home", { user, userData });
@@ -27,16 +51,103 @@ export const HomeController = {
 
 function _initFilterAndLocate() {
   document.querySelectorAll(".filter-chip").forEach(btn => {
+    if (btn.id === "region-filter-btn") return; // Ignore region button for urgency logic
+
     btn.addEventListener("click", () => {
-      document.querySelectorAll(".filter-chip").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".filter-chip:not(#region-filter-btn)").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
-      const f = btn.dataset.filter;
-      if (!mapInstance) return;
-      markersLayer.forEach(({ marker, loc }) => {
-        const show = f === "all" || loc.urgency === f;
-        show ? marker.addTo(mapInstance) : mapInstance.removeLayer(marker);
-      });
+      currentUrgency = btn.dataset.filter;
+      applyFilters();
     });
+  });
+
+  // Region Filter logic
+  let provincesData = null;
+  const regionBtn = document.getElementById("region-filter-btn");
+  const regionModal = document.getElementById("region-filter-modal");
+  const provSelect = document.getElementById("filter-province");
+  const distSelect = document.getElementById("filter-district");
+
+  regionBtn?.addEventListener("click", async () => {
+    regionModal.style.display = "flex";
+    if (!provincesData) {
+      try {
+        provSelect.innerHTML = '<option value="">Đang tải...</option>';
+        const res = await fetch("https://provinces.open-api.vn/api/?depth=2");
+        provincesData = await res.json();
+        provSelect.innerHTML = '<option value="">Tất cả tỉnh thành</option>';
+        provincesData.forEach(p => {
+          provSelect.innerHTML += `<option value="${p.name}">${p.name}</option>`;
+        });
+        if (currentProvince) provSelect.value = currentProvince;
+      } catch (err) {
+        provSelect.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
+      }
+    } else {
+      if (currentProvince) {
+        provSelect.value = currentProvince;
+        distSelect.innerHTML = '<option value="">Tất cả quận huyện</option>';
+        distSelect.disabled = false;
+        const prov = provincesData.find(p => p.name === currentProvince);
+        if (prov && prov.districts) {
+          prov.districts.forEach(d => {
+            distSelect.innerHTML += `<option value="${d.name}">${d.name}</option>`;
+          });
+        }
+        if (currentDistrict) distSelect.value = currentDistrict;
+      }
+    }
+  });
+
+  provSelect?.addEventListener("change", () => {
+    const provName = provSelect.value;
+    distSelect.innerHTML = '<option value="">Tất cả quận huyện</option>';
+    if (provName) {
+      distSelect.disabled = false;
+      const prov = provincesData.find(p => p.name === provName);
+      if (prov && prov.districts) {
+        prov.districts.forEach(d => {
+          distSelect.innerHTML += `<option value="${d.name}">${d.name}</option>`;
+        });
+      }
+    } else {
+      distSelect.disabled = true;
+    }
+    distSelect.value = "";
+  });
+
+  document.getElementById("region-filter-clear")?.addEventListener("click", () => {
+    if (provSelect) provSelect.value = "";
+    if (distSelect) {
+      distSelect.innerHTML = '<option value="">Tất cả quận huyện</option>';
+      distSelect.disabled = true;
+    }
+    currentProvince = "";
+    currentDistrict = "";
+    regionBtn.classList.remove("active");
+    regionBtn.style.background = "var(--bg2)";
+    regionBtn.style.color = "inherit";
+    regionBtn.style.borderColor = "var(--border)";
+    applyFilters();
+    regionModal.style.display = "none";
+  });
+
+  document.getElementById("region-filter-apply")?.addEventListener("click", () => {
+    currentProvince = provSelect.value;
+    currentDistrict = distSelect.value;
+    if (currentProvince) {
+      regionBtn.classList.add("active");
+      regionBtn.style.background = "var(--accent)";
+      regionBtn.style.color = "white";
+      regionBtn.style.borderColor = "var(--accent)";
+    } else {
+      regionBtn.classList.remove("active");
+      regionBtn.style.background = "var(--bg2)";
+      regionBtn.style.color = "inherit";
+      regionBtn.style.borderColor = "var(--border)";
+    }
+    applyFilters();
+    regionModal.style.display = "none";
   });
 
   document.getElementById("locate-btn")?.addEventListener("click", () => {
@@ -89,8 +200,10 @@ function _initMapWhenReady(locations, user, userData) {
       mapInstance.invalidateSize();
       markersLayer = [];
       _plotMarkers(locations, user, userData);
-      const badge = document.getElementById("map-count-badge");
-      if (badge) badge.textContent = `${locations.length} địa điểm`;
+      
+      // Apply any existing filters (e.g. if returning from another page)
+      applyFilters();
+
       if (locations.length > 0 && markersLayer.length > 0) {
         try {
           const group = L.featureGroup(markersLayer.map(m => m.marker));
