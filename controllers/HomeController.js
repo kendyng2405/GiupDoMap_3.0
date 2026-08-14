@@ -73,7 +73,7 @@ function _initFilterAndLocate() {
     if (!provincesData) {
       try {
         provSelect.innerHTML = '<option value="">Đang tải...</option>';
-        const res = await fetch("https://provinces.open-api.vn/api/?depth=2");
+        const res = await fetch("https://provinces.open-api.vn/api/?depth=3");
         provincesData = await res.json();
         provSelect.innerHTML = '<option value="">Tất cả tỉnh thành</option>';
         provincesData.forEach(p => {
@@ -86,12 +86,20 @@ function _initFilterAndLocate() {
     } else {
       if (currentProvince) {
         provSelect.value = currentProvince;
-        distSelect.innerHTML = '<option value="">Tất cả quận huyện</option>';
+        distSelect.innerHTML = '<option value="">Tất cả Phường/Xã/Đặc khu</option>';
         distSelect.disabled = false;
         const prov = provincesData.find(p => p.name === currentProvince);
         if (prov && prov.districts) {
+          const allWards = [];
           prov.districts.forEach(d => {
-            distSelect.innerHTML += `<option value="${d.name}">${d.name}</option>`;
+            if (d.wards) {
+              d.wards.forEach(w => allWards.push(w.name));
+            }
+          });
+          // Unique and sort
+          const uniqueWards = [...new Set(allWards)].sort();
+          uniqueWards.forEach(wName => {
+            distSelect.innerHTML += `<option value="${wName}">${wName}</option>`;
           });
         }
         if (currentDistrict) distSelect.value = currentDistrict;
@@ -101,13 +109,20 @@ function _initFilterAndLocate() {
 
   provSelect?.addEventListener("change", () => {
     const provName = provSelect.value;
-    distSelect.innerHTML = '<option value="">Tất cả quận huyện</option>';
+    distSelect.innerHTML = '<option value="">Tất cả Phường/Xã/Đặc khu</option>';
     if (provName) {
       distSelect.disabled = false;
       const prov = provincesData.find(p => p.name === provName);
       if (prov && prov.districts) {
+        const allWards = [];
         prov.districts.forEach(d => {
-          distSelect.innerHTML += `<option value="${d.name}">${d.name}</option>`;
+          if (d.wards) {
+            d.wards.forEach(w => allWards.push(w.name));
+          }
+        });
+        const uniqueWards = [...new Set(allWards)].sort();
+        uniqueWards.forEach(wName => {
+          distSelect.innerHTML += `<option value="${wName}">${wName}</option>`;
         });
       }
     } else {
@@ -119,7 +134,7 @@ function _initFilterAndLocate() {
   document.getElementById("region-filter-clear")?.addEventListener("click", () => {
     if (provSelect) provSelect.value = "";
     if (distSelect) {
-      distSelect.innerHTML = '<option value="">Tất cả quận huyện</option>';
+      distSelect.innerHTML = '<option value="">Tất cả Phường/Xã/Đặc khu</option>';
       distSelect.disabled = true;
     }
     currentProvince = "";
