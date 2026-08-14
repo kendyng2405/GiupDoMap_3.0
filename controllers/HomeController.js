@@ -73,7 +73,7 @@ function _initFilterAndLocate() {
     if (!provincesData) {
       try {
         provSelect.innerHTML = '<option value="">Đang tải...</option>';
-        const res = await fetch("https://provinces.open-api.vn/api/?depth=3");
+        const res = await fetch("/data/provinces.json");
         provincesData = await res.json();
         provSelect.innerHTML = '<option value="">Tất cả tỉnh thành</option>';
         provincesData.forEach(p => {
@@ -89,16 +89,8 @@ function _initFilterAndLocate() {
         distSelect.innerHTML = '<option value="">Tất cả Phường/Xã/Đặc khu</option>';
         distSelect.disabled = false;
         const prov = provincesData.find(p => p.name === currentProvince);
-        if (prov && prov.districts) {
-          const allWards = [];
-          prov.districts.forEach(d => {
-            if (d.wards) {
-              d.wards.forEach(w => allWards.push(w.name));
-            }
-          });
-          // Unique and sort
-          const uniqueWards = [...new Set(allWards)].sort();
-          uniqueWards.forEach(wName => {
+        if (prov && prov.wards) {
+          prov.wards.forEach(wName => {
             distSelect.innerHTML += `<option value="${wName}">${wName}</option>`;
           });
         }
@@ -113,15 +105,8 @@ function _initFilterAndLocate() {
     if (provName) {
       distSelect.disabled = false;
       const prov = provincesData.find(p => p.name === provName);
-      if (prov && prov.districts) {
-        const allWards = [];
-        prov.districts.forEach(d => {
-          if (d.wards) {
-            d.wards.forEach(w => allWards.push(w.name));
-          }
-        });
-        const uniqueWards = [...new Set(allWards)].sort();
-        uniqueWards.forEach(wName => {
+      if (prov && prov.wards) {
+        prov.wards.forEach(wName => {
           distSelect.innerHTML += `<option value="${wName}">${wName}</option>`;
         });
       }
