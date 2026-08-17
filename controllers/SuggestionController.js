@@ -30,7 +30,7 @@ export const SuggestionController = {
     // Check for nearby duplicates for pending suggestions
     pending.forEach(p => {
       const dists = allLocs.map(loc => _haversine(p.lat, p.lng, loc.lat, loc.lng));
-      p.hasNearby = dists.some(d => d <= 0.5); // <= 500m
+      p.hasNearby = dists.some(d => d <= 0.1); // <= 100m
     });
 
     renderView("admin-suggestions", { userData, pending, approved, rejected });
@@ -45,6 +45,7 @@ function _initSuggestionForm(user, userData) {
 
   let pickerMap = L.map("suggest-map", {
     center: [16.047, 108.206], zoom: 6,
+    attributionControl: false
   });
 
   L.tileLayer("https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}", {
@@ -169,6 +170,7 @@ function _initSuggestionList(currentUserData) {
     const rejectBtn  = e.target.closest(".btn-reject");
     const deleteBtn  = e.target.closest(".btn-sug-delete");
     const checkBtn   = e.target.closest(".btn-check-nearby");
+    const editBtn    = e.target.closest(".btn-edit-sug");
     const aiBtn      = e.target.closest(".btn-ai-check");
     const userLink   = e.target.closest(".view-user-info");
 
@@ -191,6 +193,29 @@ function _initSuggestionList(currentUserData) {
       } catch(err) {
         Toast.show("Không thể lấy thông tin người dùng", "error");
       }
+      return;
+    }
+
+    // Edit Suggestion
+    if (editBtn) {
+      const id = editBtn.dataset.id;
+      const title = decodeURIComponent(editBtn.dataset.title || "");
+      const desc = decodeURIComponent(editBtn.dataset.desc || "");
+      const aiHint = decodeURIComponent(editBtn.dataset.ai || "");
+
+      document.getElementById("edit-sug-id").value = id;
+      document.getElementById("edit-sug-title").value = title;
+      document.getElementById("edit-sug-desc").value = desc;
+
+      const aiHintEl = document.getElementById("edit-sug-ai-hint");
+      if (aiHint) {
+        aiHintEl.innerHTML = "<strong>Gợi ý từ AI:</strong> " + aiHint;
+        aiHintEl.style.display = "block";
+      } else {
+        aiHintEl.style.display = "none";
+      }
+
+      document.getElementById("modal-edit-sug").style.display = "flex";
       return;
     }
 
@@ -255,7 +280,7 @@ function _initSuggestionList(currentUserData) {
       const id    = rejectBtn.dataset.id;
       const title = rejectBtn.dataset.title;
       const toUid = rejectBtn.dataset.uid;
-      const aiReason = rejectBtn.dataset.aiReason || "";
+      const aiReason = rejectBtn.dataset.aiReason ? decodeURIComponent(rejectBtn.dataset.aiReason) : "";
       _openRejectModal(id, title, toUid, currentUserData, aiReason);
       return;
     }
@@ -292,6 +317,34 @@ function _initSuggestionList(currentUserData) {
         }
       });
     });
+  });
+
+  // Save Edited Suggestion
+  document.getElementById("btn-save-edit-sug")?.addEventListener("click", async () => {
+    const id = document.getElementById("edit-sug-id").value;
+    const title = document.getElementById("edit-sug-title").value.trim();
+    const desc = document.getElementById("edit-sug-desc").value.trim();
+
+    if (!title || !desc) {
+      Toast.show("Vui lòng nhập đủ tiêu đề và mô tả", "error");
+      return;
+    }
+
+    const btn = document.getElementById("btn-save-edit-sug");
+    btn.disabled = true;
+    btn.textContent = "Đang lưu...";
+
+    try {
+      await SuggestionModel.update(id, { title, description: desc });
+      document.getElementById("modal-edit-sug").style.display = "none";
+      Toast.show("Cập nhật đề xuất thành công!");
+      router.navigate("/admin/suggestions"); // reload the page
+    } catch(err) {
+      Toast.show("Lỗi cập nhật: " + err.message, "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Lưu thay đổi";
+    }
   });
 
   // Run AI Moderation automatically for pending suggestions
@@ -333,21 +386,24 @@ async function _runAutoModeration() {
         continue;
       }
       
+      let recommendation = data.recommendation || "N/A";
+      let isRejected = recommendation.toLowerCase().includes("từ chối");
       let isSafe = data.isSafe;
-      let color = isSafe ? "#16A34A" : "#DC2626";
-      let bg = isSafe ? "rgba(34,197,94,.08)" : "rgba(239,68,68,.08)";
+      
+      let color = (!isSafe || isRejected) ? "#DC2626" : "#16A34A";
+      let bg = (!isSafe || isRejected) ? "rgba(239,68,68,.08)" : "rgba(34,197,94,.08)";
       
       resDiv.style.background = bg;
       resDiv.style.border = "1px solid " + color;
       resDiv.style.color = color;
-      resDiv.innerHTML = `<strong>Đánh giá AI:</strong> ${data.recommendation || "N/A"}<br><em style="display:block;margin-top:4px;">${data.reasoning || "Không có lý do chi tiết"}</em>`;
+      resDiv.innerHTML = `<strong>Đánh giá AI:</strong> ${recommendation}<br><em style="display:block;margin-top:4px;">${data.reasoning || "Không có lý do chi tiết"}</em>`;
       
       if (data.suggestedEdit) {
         resDiv.innerHTML += `<div style="margin-top:8px;padding-top:8px;border-top:1px dashed ${color}50;font-size:0.8rem;"><strong>Gợi ý sửa đổi:</strong> ${data.suggestedEdit}</div>`;
       }
       
-      if (!isSafe && rejectBtn) {
-        rejectBtn.dataset.aiReason = data.reasoning || "";
+      if (rejectBtn && data.reasoning) {
+        rejectBtn.dataset.aiReason = encodeURIComponent(data.reasoning);
       }
 
       // Save the AI result to Firebase so we don't have to fetch it again
@@ -423,7 +479,7 @@ async function _openNearbyModal(sugLat, sugLng, sugTitle) {
 
   await new Promise(r => setTimeout(r, 80));
 
-  _nearbyMap = L.map("nearby-map", { center: [sugLat, sugLng], zoom: 14 });
+  _nearbyMap = L.map("nearby-map", { center: [sugLat, sugLng], zoom: 14, attributionControl: false });
   L.tileLayer("https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}", {
     subdomains: ["mt0", "mt1", "mt2", "mt3"],
     attribution: '&copy; Google Maps',
@@ -446,9 +502,9 @@ async function _openNearbyModal(sugLat, sugLng, sugTitle) {
     .bindPopup(`<b style="color:#EF4444">Đề xuất mới</b><br>${sugTitle}`)
     .openPopup();
 
-  // Vẽ vòng tròn bán kính 500m
+  // Vẽ vùng tròn bán kính 100m
   L.circle([sugLat, sugLng], {
-    radius: 500,
+    radius: 100,
     color: "#EF4444",
     fillColor: "#EF4444",
     fillOpacity: 0.07,
@@ -456,13 +512,13 @@ async function _openNearbyModal(sugLat, sugLng, sugTitle) {
     dashArray: "5,5",
   }).addTo(_nearbyMap);
 
-  // Load tất cả địa điểm hiện có và tìm những cái gần < 500m
+  // Load tất cả địa điểm hiện có và tìm những cái gần < 100m
   const listEl = document.getElementById("nearby-list");
   listEl.innerHTML = `<p style="font-size:.8rem;color:var(--text2);">Đang tải địa điểm...</p>`;
 
   try {
     const locations = await LocationModel.findAll(false);
-    const RADIUS_KM = 0.5;
+    const RADIUS_KM = 0.1;
     const nearby = locations
       .map(loc => ({ ...loc, dist: _haversine(sugLat, sugLng, loc.lat, loc.lng) }))
       .filter(loc => loc.dist < RADIUS_KM)
@@ -495,7 +551,7 @@ async function _openNearbyModal(sugLat, sugLng, sugTitle) {
         <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;
           background:rgba(34,197,94,.1);border-radius:8px;border:1px solid rgba(34,197,94,.3);">
           <span style="color:#22C55E;font-size:1rem;">✓</span>
-          <span style="font-size:.85rem;color:var(--text1);">Không có địa điểm nào trong bán kính 500m. Vị trí này có thể duyệt.</span>
+          <span style="font-size:.85rem;color:var(--text1);">Không có địa điểm nào trong bán kính 100m. Vị trí này có thể duyệt.</span>
         </div>`;
     } else {
       const rows = nearby.map(loc => `
@@ -519,7 +575,7 @@ async function _openNearbyModal(sugLat, sugLng, sugTitle) {
           margin-bottom:12px;">
           <span style="color:#EF4444;font-size:1rem;">⚠</span>
           <span style="font-size:.85rem;color:var(--text1);">
-            Phát hiện <strong>${nearby.length}</strong> địa điểm trong bán kính 500m — kiểm tra trùng lặp trước khi duyệt.
+            Phát hiện <strong>${nearby.length}</strong> địa điểm trong bán kính 100m — kiểm tra trùng lặp trước khi duyệt.
           </span>
         </div>
         <div style="font-size:.8rem;font-weight:600;color:var(--text2);margin-bottom:4px;">
@@ -573,6 +629,8 @@ function _openRejectModal(sugId, title, submitterUid, currentUserData, aiReason 
 
   const oldBtn = document.getElementById("reject-confirm-btn");
   const newBtn = oldBtn.cloneNode(true);
+  newBtn.disabled = false;
+  newBtn.textContent = "Xác nhận từ chối";
   oldBtn.parentNode.replaceChild(newBtn, oldBtn);
 
   newBtn.onclick = async () => {

@@ -8,6 +8,154 @@ let mapInstance = null;
 let markersLayer = [];
 let userLocationLayer = null; // track user pin để xóa khi bấm lại
 
+let currentUrgency = "all";
+let currentProvince = "";
+let currentDistrict = "";
+
+// ---- Normalize helpers for flexible region matching ----
+function _removeDiacritics(str) {
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D");
+}
+
+function _normalizeForMatch(str) {
+  return _removeDiacritics(str.toLowerCase().trim())
+    .replace(/\s+/g, " ");
+}
+
+function _stripPrefix(name) {
+  // Remove common Vietnamese administrative prefixes
+  return name
+    .replace(/^(Tỉnh|Thành phố|Thành Phố|TP\.?|tp\.?)\s+/i, "")
+    .replace(/^(Phường|Xã|Thị trấn|Đặc khu|Dac khu)\s+/i, "")
+    .trim();
+}
+
+function _addressMatchesProvince(address, provinceName) {
+  if (!address || !provinceName) return false;
+  const addrNorm = _normalizeForMatch(address);
+  
+  // Try full name first
+  if (addrNorm.includes(_normalizeForMatch(provinceName))) return true;
+  
+  // Try without prefix (e.g. "Hồ Chí Minh" instead of "Thành phố Hồ Chí Minh")
+  const stripped = _stripPrefix(provinceName);
+  if (stripped && addrNorm.includes(_normalizeForMatch(stripped))) return true;
+  
+  // Common abbreviations
+  const strippedNorm = _normalizeForMatch(stripped);
+  if (strippedNorm === "ho chi minh" || strippedNorm === "hcm") {
+    if (addrNorm.includes("tp.hcm") || addrNorm.includes("tphcm") || addrNorm.includes("tp hcm") ||
+        addrNorm.includes("sai gon") || addrNorm.includes("saigon") ||
+        addrNorm.includes("ho chi minh")) return true;
+  }
+  if (strippedNorm === "ha noi") {
+    if (addrNorm.includes("ha noi") || addrNorm.includes("hanoi") || addrNorm.includes("hn")) return true;
+  }
+  if (strippedNorm === "da nang") {
+    if (addrNorm.includes("da nang") || addrNorm.includes("danang")) return true;
+  }
+  
+  return false;
+}
+
+function _addressMatchesWard(address, wardName) {
+  if (!address || !wardName) return false;
+  const addrNorm = _normalizeForMatch(address);
+  
+  // Try full name
+  if (addrNorm.includes(_normalizeForMatch(wardName))) return true;
+  
+  // Try without prefix
+  const stripped = _stripPrefix(wardName);
+  if (stripped && addrNorm.includes(_normalizeForMatch(stripped))) return true;
+  
+  return false;
+}
+
+function applyFilters() {
+  if (!mapInstance) return;
+  let visibleCount = 0;
+  const visibleItems = [];
+  const urgencyColors = { normal: "#22C55E", urgent: "#EAB308", critical: "#EF4444" };
+  const urgencyLabels = { normal: "Bình thường", urgent: "Khẩn cấp", critical: "Rất khẩn" };
+
+  markersLayer.forEach(({ marker, loc }) => {
+    const matchUrgency = currentUrgency === "all" || loc.urgency === currentUrgency;
+    let matchRegion = true;
+    if (currentProvince) {
+      matchRegion = _addressMatchesProvince(loc.address, currentProvince);
+      if (matchRegion && currentDistrict) {
+        matchRegion = _addressMatchesWard(loc.address, currentDistrict);
+      }
+    }
+    const show = matchUrgency && matchRegion;
+    show ? marker.addTo(mapInstance) : mapInstance.removeLayer(marker);
+    if (show) {
+      visibleCount++;
+      visibleItems.push({ marker, loc });
+    }
+  });
+  const badge = document.getElementById("map-count-badge");
+  if (badge) badge.textContent = `${visibleCount} địa điểm`;
+
+  // --- Results Panel ---
+  const panel = document.getElementById("results-panel");
+  const list = document.getElementById("results-panel-list");
+  const countEl = document.getElementById("results-panel-count");
+  if (!panel || !list) return;
+
+  const hasActiveFilter = currentUrgency !== "all" || currentProvince;
+
+  if (hasActiveFilter) {
+    countEl.textContent = `${visibleCount} địa điểm`;
+    if (visibleItems.length === 0) {
+      list.innerHTML = `
+        <div class="results-empty">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <p>Không tìm thấy địa điểm<br>phù hợp với bộ lọc.</p>
+        </div>`;
+    } else {
+      list.innerHTML = visibleItems.map(({ loc }) => {
+        const color = urgencyColors[loc.urgency] || "#22C55E";
+        const label = urgencyLabels[loc.urgency] || "";
+        return `
+          <div class="results-item" data-loc-id="${loc.id}">
+            <div class="results-item-dot" style="background:${color}"></div>
+            <div class="results-item-body">
+              <div class="results-item-title">${loc.title}</div>
+              ${loc.address ? `<div class="results-item-addr">${loc.address}</div>` : ""}
+              <div class="results-item-badges">
+                <span class="badge" style="background:${color}20;color:${color};">${label}</span>
+                ${loc.peopleCount ? `<span class="badge badge--muted">${loc.peopleCount} người</span>` : ""}
+              </div>
+            </div>
+          </div>`;
+      }).join("");
+
+      // Click handlers for each item
+      list.querySelectorAll(".results-item").forEach(el => {
+        el.addEventListener("click", () => {
+          const locId = el.dataset.locId;
+          const found = visibleItems.find(v => v.loc.id === locId);
+          if (found) {
+            mapInstance.flyTo([found.loc.lat, found.loc.lng], 16, { animate: true, duration: 0.8 });
+            found.marker.fire("click");
+            // On mobile, close results panel after selecting
+            if (window.innerWidth <= 768) {
+              panel.classList.remove("open");
+            }
+          }
+        });
+      });
+    }
+    panel.classList.add("open");
+  } else {
+    panel.classList.remove("open");
+  }
+}
+
 export const HomeController = {
   async show({ user, userData }) {
     renderView("home", { user, userData });
@@ -27,16 +175,103 @@ export const HomeController = {
 
 function _initFilterAndLocate() {
   document.querySelectorAll(".filter-chip").forEach(btn => {
+    if (btn.id === "region-filter-btn") return; // Ignore region button for urgency logic
+
     btn.addEventListener("click", () => {
-      document.querySelectorAll(".filter-chip").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".filter-chip:not(#region-filter-btn)").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
-      const f = btn.dataset.filter;
-      if (!mapInstance) return;
-      markersLayer.forEach(({ marker, loc }) => {
-        const show = f === "all" || loc.urgency === f;
-        show ? marker.addTo(mapInstance) : mapInstance.removeLayer(marker);
-      });
+      currentUrgency = btn.dataset.filter;
+      applyFilters();
     });
+  });
+
+  // Region Filter logic
+  let provincesData = null;
+  const regionBtn = document.getElementById("region-filter-btn");
+  const regionModal = document.getElementById("region-filter-modal");
+  const provSelect = document.getElementById("filter-province");
+  const distSelect = document.getElementById("filter-district");
+
+  regionBtn?.addEventListener("click", async () => {
+    regionModal.style.display = "flex";
+    if (!provincesData) {
+      try {
+        provSelect.innerHTML = '<option value="">Đang tải...</option>';
+        const res = await fetch("/public/data/provinces.json");
+        provincesData = await res.json();
+        provSelect.innerHTML = '<option value="">Tất cả tỉnh thành</option>';
+        provincesData.forEach(p => {
+          provSelect.innerHTML += `<option value="${p.name}">${p.name}</option>`;
+        });
+        if (currentProvince) provSelect.value = currentProvince;
+      } catch (err) {
+        provSelect.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
+      }
+    } else {
+      if (currentProvince) {
+        provSelect.value = currentProvince;
+        distSelect.innerHTML = '<option value="">Tất cả Phường/Xã/Đặc khu</option>';
+        distSelect.disabled = false;
+        const prov = provincesData.find(p => p.name === currentProvince);
+        if (prov && prov.wards) {
+          prov.wards.forEach(wName => {
+            distSelect.innerHTML += `<option value="${wName}">${wName}</option>`;
+          });
+        }
+        if (currentDistrict) distSelect.value = currentDistrict;
+      }
+    }
+  });
+
+  provSelect?.addEventListener("change", () => {
+    const provName = provSelect.value;
+    distSelect.innerHTML = '<option value="">Tất cả Phường/Xã/Đặc khu</option>';
+    if (provName) {
+      distSelect.disabled = false;
+      const prov = provincesData.find(p => p.name === provName);
+      if (prov && prov.wards) {
+        prov.wards.forEach(wName => {
+          distSelect.innerHTML += `<option value="${wName}">${wName}</option>`;
+        });
+      }
+    } else {
+      distSelect.disabled = true;
+    }
+    distSelect.value = "";
+  });
+
+  document.getElementById("region-filter-clear")?.addEventListener("click", () => {
+    if (provSelect) provSelect.value = "";
+    if (distSelect) {
+      distSelect.innerHTML = '<option value="">Tất cả Phường/Xã/Đặc khu</option>';
+      distSelect.disabled = true;
+    }
+    currentProvince = "";
+    currentDistrict = "";
+    regionBtn.classList.remove("active");
+    regionBtn.style.background = "var(--bg2)";
+    regionBtn.style.color = "inherit";
+    regionBtn.style.borderColor = "var(--border)";
+    applyFilters();
+    regionModal.style.display = "none";
+  });
+
+  document.getElementById("region-filter-apply")?.addEventListener("click", () => {
+    currentProvince = provSelect.value;
+    currentDistrict = distSelect.value;
+    if (currentProvince) {
+      regionBtn.classList.add("active");
+      regionBtn.style.background = "var(--accent)";
+      regionBtn.style.color = "white";
+      regionBtn.style.borderColor = "var(--accent)";
+    } else {
+      regionBtn.classList.remove("active");
+      regionBtn.style.background = "var(--bg2)";
+      regionBtn.style.color = "inherit";
+      regionBtn.style.borderColor = "var(--border)";
+    }
+    applyFilters();
+    regionModal.style.display = "none";
   });
 
   document.getElementById("locate-btn")?.addEventListener("click", () => {
@@ -53,6 +288,11 @@ function _initFilterAndLocate() {
         radius: 150, color: "#C0392B", fillOpacity: 0.15
       }).addTo(mapInstance);
     }, () => Toast.show("Không thể lấy vị trí.", "error"));
+  });
+
+  // Results panel close button
+  document.getElementById("results-panel-close")?.addEventListener("click", () => {
+    document.getElementById("results-panel")?.classList.remove("open");
   });
 }
 
@@ -78,6 +318,7 @@ function _initMapWhenReady(locations, user, userData) {
         center: [16.047079, 108.206230],
         zoom: 6,
         zoomControl: false,
+        attributionControl: false,
         preferCanvas: true,
       });
       L.control.zoom({ position: "topright" }).addTo(mapInstance);
@@ -89,8 +330,10 @@ function _initMapWhenReady(locations, user, userData) {
       mapInstance.invalidateSize();
       markersLayer = [];
       _plotMarkers(locations, user, userData);
-      const badge = document.getElementById("map-count-badge");
-      if (badge) badge.textContent = `${locations.length} địa điểm`;
+      
+      // Apply any existing filters (e.g. if returning from another page)
+      applyFilters();
+
       if (locations.length > 0 && markersLayer.length > 0) {
         try {
           const group = L.featureGroup(markersLayer.map(m => m.marker));
@@ -204,7 +447,7 @@ function _openSidebar(loc, user, userData, sidebar) {
     </div>
     <div class="urgency-strip" style="background:${uc}"></div>
     ${loc.imageUrl
-      ? `<img src="${loc.imageUrl}" class="sidebar-img" alt="${loc.title}" loading="lazy">`
+      ? `<img src="${loc.imageUrl}" class="sidebar-img" alt="${loc.title}" loading="lazy" style="cursor:pointer;" onclick="document.getElementById('global-img-view').src=this.src;document.getElementById('global-img-modal').style.display='flex';">`
       : `<div class="sidebar-img-placeholder">Chưa có ảnh</div>`}
     <h2 class="sidebar-loc-title">${loc.title}</h2>
     <div class="sidebar-badges">

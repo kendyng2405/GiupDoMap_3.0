@@ -29,6 +29,13 @@ export function renderView(name, data = {}) {
 
     const html = views[name]?.(data) || `<div class="container pt-120"><h1>Không tìm thấy trang</h1></div>`;
     app.innerHTML = html;
+
+    // Toggle body class for mobile map viewport lock
+    if (name === "home") {
+        document.body.classList.add("map-active");
+    } else {
+        document.body.classList.remove("map-active");
+    }
 }
 
 const views = {
@@ -65,12 +72,57 @@ const views = {
                 <div style="width:1px;height:16px;background:var(--border);margin:0 4px;"></div>
                 
                 <button class="filter-chip active" data-filter="all">Tất cả</button>
+                <button class="filter-chip" id="region-filter-btn" style="border: 1px dashed var(--border); background: var(--bg2);">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:2px"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                    Khu vực
+                </button>
+                <div style="width:1px;height:16px;background:var(--border);margin:0 4px;"></div>
                 <button class="filter-chip" data-filter="critical"><span class="dot" style="background:#EF4444"></span>Rất khẩn</button>
                 <button class="filter-chip" data-filter="urgent"><span class="dot" style="background:#EAB308"></span>Khẩn cấp</button>
                 <button class="filter-chip" data-filter="normal"><span class="dot" style="background:#22C55E"></span>Bình thường</button>
             </div>
             
             <div class="map-sidebar" id="map-sidebar"></div>
+            
+            <div class="results-panel" id="results-panel">
+              <div class="results-panel-header">
+                <div>
+                  <h3 class="results-panel-title">Kết quả lọc</h3>
+                  <span class="results-panel-count" id="results-panel-count">0 địa điểm</span>
+                </div>
+                <button class="sidebar-close" id="results-panel-close" title="Đóng">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="results-panel-list" id="results-panel-list"></div>
+            </div>
+            
+            <div id="region-filter-modal" class="modal-backdrop" style="display:none; z-index: 10000;" onclick="if(event.target===this) this.style.display='none'">
+              <div class="modal-box" style="width: 90%; max-width: 400px; padding: 20px;">
+                <h3 style="margin-bottom:15px; font-family:'Playfair Display',serif; font-size:1.3rem;">Lọc theo khu vực</h3>
+                
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label style="display:block; margin-bottom:5px; font-size:0.85rem; font-weight:600;">Tỉnh/Thành phố</label>
+                    <select id="filter-province" class="form-control" style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--bg); color:var(--text);">
+                        <option value="">Tất cả tỉnh thành</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label style="display:block; margin-bottom:5px; font-size:0.85rem; font-weight:600;">PHƯỜNG/XÃ/ĐẶC KHU</label>
+                    <select id="filter-district" class="form-control" disabled style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--bg); color:var(--text);">
+                        <option value="">Tất cả Phường/Xã/Đặc khu</option>
+                    </select>
+                </div>
+                
+                <div style="display:flex; gap:10px; justify-content:flex-end;">
+                  <button class="btn btn--ghost" id="region-filter-clear">Xóa lọc</button>
+                  <button class="btn btn--primary" id="region-filter-apply">Áp dụng</button>
+                </div>
+              </div>
+            </div>
         </div>
     `,
 
@@ -818,6 +870,31 @@ const views = {
           </div>
         </div>
       </main>
+
+      <!-- Modal Sửa Đề Xuất -->
+      <div id="modal-edit-sug" class="modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+        <div style="background:white;border-radius:12px;padding:24px;width:100%;max-width:500px;">
+          <h3 style="margin-top:0;margin-bottom:16px;">Sửa đề xuất</h3>
+          <div id="edit-sug-ai-hint" style="background:#FEF3C7;color:#92400E;padding:12px;border-radius:8px;font-size:0.85rem;margin-bottom:16px;display:none;"></div>
+          <input type="hidden" id="edit-sug-id">
+          
+          <div style="margin-bottom:12px;">
+            <label style="display:block;font-size:0.85rem;font-weight:600;margin-bottom:4px;color:var(--text2);">Tiêu đề</label>
+            <input type="text" id="edit-sug-title" class="form-control" style="width:100%;">
+          </div>
+          
+          <div style="margin-bottom:16px;">
+            <label style="display:block;font-size:0.85rem;font-weight:600;margin-bottom:4px;color:var(--text2);">Mô tả hoàn cảnh</label>
+            <textarea id="edit-sug-desc" class="form-control" style="width:100%;height:100px;resize:vertical;"></textarea>
+          </div>
+          
+          <div style="display:flex;gap:12px;justify-content:flex-end;">
+            <button class="btn" style="background:var(--bg2);" onclick="document.getElementById('modal-edit-sug').style.display='none'">Hủy</button>
+            <button id="btn-save-edit-sug" class="btn btn--primary">Lưu thay đổi</button>
+          </div>
+        </div>
+      </div>
+
     </div>`,
 
 
@@ -826,7 +903,7 @@ const views = {
 // ── Helper: Suggestion card ──────────────────────────────
 function _suggestionCard(s, status) {
   const URGENCY_LABEL = { normal: "Bình thường", urgent: "Khẩn cấp", critical: "Rất khẩn" };
-  const urgencyColor = { normal: "#22C55E", urgent: "#EAB308", critical: "#EF4444" };
+  const urgencyColor = { normal: "#22C55E", urgent: "#EF4444", critical: "#B91C1C" };
   const uc = urgencyColor[s.urgency] || "#22C55E";
   const time = s.createdAt?.toDate ? s.createdAt.toDate().toLocaleDateString("vi-VN") : "";
   const isoDate = s.createdAt?.toDate ? s.createdAt.toDate().toISOString().split("T")[0] : "";
@@ -836,8 +913,9 @@ function _suggestionCard(s, status) {
       <button class="btn btn--sm btn-check-nearby" data-lat="${s.lat}" data-lng="${s.lng}" data-title="${s.title}" style="background:var(--bg2);color:var(--text1);border:1px solid var(--border);">Xem vị trí</button>
       ${s.hasNearby ? `<span style="position:absolute;top:-4px;right:-4px;width:12px;height:12px;background:#EAB308;border-radius:50%;border:2px solid white;animation:pulse 2s infinite;"></span>` : ''}
     </div>
+    <button class="btn btn--sm btn-edit-sug" data-id="${s.id}" data-title="${encodeURIComponent(s.title || "")}" data-desc="${encodeURIComponent(s.description || "")}" data-ai="${encodeURIComponent(s.aiResult?.suggestedEdit || "")}" style="background:var(--bg2);color:var(--text1);border:1px solid var(--border);">Sửa</button>
     <button class="btn btn--sm btn-approve" data-id="${s.id}" style="min-width:80px;background:#22C55E;color:white;border:none;">Duyệt</button>
-    <button class="btn btn--sm btn-reject" data-id="${s.id}" data-title="${s.title}" data-uid="${s.submittedBy}" style="background:#EF4444;color:white;border:none;">Từ chối</button>
+    <button class="btn btn--sm btn-reject" data-id="${s.id}" data-title="${s.title}" data-uid="${s.submittedBy}" data-ai-reason="${encodeURIComponent(s.aiResult?.reasoning || "")}" style="background:#EF4444;color:white;border:none;">Từ chối</button>
     <button class="btn btn--sm btn-sug-delete" data-id="${s.id}" style="background:var(--bg2);color:var(--text-muted);border:1px solid var(--border);">Xóa</button>
   ` : status === "rejected" ? `
     <button class="btn btn--sm btn-sug-delete" data-id="${s.id}" style="background:var(--bg2);color:var(--text-muted);border:1px solid var(--border);">Xóa</button>
@@ -846,11 +924,13 @@ function _suggestionCard(s, status) {
   let aiResultHtml = "";
   if (status === "pending") {
     if (s.aiResult) {
+      const recommendation = s.aiResult.recommendation || "N/A";
+      const isRejected = recommendation.toLowerCase().includes("từ chối");
       const isSafe = s.aiResult.isSafe;
-      const color = isSafe ? "#16A34A" : "#DC2626";
-      const bg = isSafe ? "rgba(34,197,94,.08)" : "rgba(239,68,68,.08)";
+      const color = (!isSafe || isRejected) ? "#DC2626" : "#16A34A";
+      const bg = (!isSafe || isRejected) ? "rgba(239,68,68,.08)" : "rgba(34,197,94,.08)";
       aiResultHtml = `<div id="ai-result-${s.id}" data-processed="true" style="margin-bottom:10px; padding:10px; border-radius:8px; font-size:0.85rem; background:${bg}; border:1px solid ${color}; color:${color};">
-        <strong>Đánh giá AI:</strong> ${s.aiResult.recommendation || "N/A"}<br>
+        <strong>Đánh giá AI:</strong> ${recommendation}<br>
         <em style="display:block;margin-top:4px;">${s.aiResult.reasoning || "Không có lý do chi tiết"}</em>
         ${s.aiResult.suggestedEdit ? `<div style="margin-top:8px;padding-top:8px;border-top:1px dashed ${color}50;font-size:0.8rem;"><strong>Gợi ý sửa đổi:</strong> ${s.aiResult.suggestedEdit}</div>` : ""}
       </div>`;

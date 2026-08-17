@@ -100,5 +100,9 @@ export const SuggestionModel = {
     await updateDoc(doc(db, "suggestions", id), {
       aiResult: aiResult,
     });
+  },
+
+  async update(id, data) {
+    await updateDoc(doc(db, "suggestions", id), data);
   }
 };
