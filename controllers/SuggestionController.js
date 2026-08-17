@@ -45,6 +45,7 @@ function _initSuggestionForm(user, userData) {
 
   let pickerMap = L.map("suggest-map", {
     center: [16.047, 108.206], zoom: 6,
+    attributionControl: false
   });
 
   L.tileLayer("https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}", {
@@ -478,7 +479,7 @@ async function _openNearbyModal(sugLat, sugLng, sugTitle) {
 
   await new Promise(r => setTimeout(r, 80));
 
-  _nearbyMap = L.map("nearby-map", { center: [sugLat, sugLng], zoom: 14 });
+  _nearbyMap = L.map("nearby-map", { center: [sugLat, sugLng], zoom: 14, attributionControl: false });
   L.tileLayer("https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}", {
     subdomains: ["mt0", "mt1", "mt2", "mt3"],
     attribution: '&copy; Google Maps',

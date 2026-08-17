@@ -287,6 +287,7 @@ function _initMapPicker(lat, lng) {
   pickerMap = L.map("map-picker", {
     center: [lat || 16.047, lng || 108.206],
     zoom: lat ? 15 : 6,
+    attributionControl: false
   });
   L.tileLayer("https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}", {
     subdomains: ["mt0", "mt1", "mt2", "mt3"],
