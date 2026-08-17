@@ -75,6 +75,10 @@ function _addressMatchesWard(address, wardName) {
 function applyFilters() {
   if (!mapInstance) return;
   let visibleCount = 0;
+  const visibleItems = [];
+  const urgencyColors = { normal: "#22C55E", urgent: "#EAB308", critical: "#EF4444" };
+  const urgencyLabels = { normal: "Bình thường", urgent: "Khẩn cấp", critical: "Rất khẩn" };
+
   markersLayer.forEach(({ marker, loc }) => {
     const matchUrgency = currentUrgency === "all" || loc.urgency === currentUrgency;
     let matchRegion = true;
@@ -86,10 +90,70 @@ function applyFilters() {
     }
     const show = matchUrgency && matchRegion;
     show ? marker.addTo(mapInstance) : mapInstance.removeLayer(marker);
-    if (show) visibleCount++;
+    if (show) {
+      visibleCount++;
+      visibleItems.push({ marker, loc });
+    }
   });
   const badge = document.getElementById("map-count-badge");
   if (badge) badge.textContent = `${visibleCount} địa điểm`;
+
+  // --- Results Panel ---
+  const panel = document.getElementById("results-panel");
+  const list = document.getElementById("results-panel-list");
+  const countEl = document.getElementById("results-panel-count");
+  if (!panel || !list) return;
+
+  const hasActiveFilter = currentUrgency !== "all" || currentProvince;
+
+  if (hasActiveFilter) {
+    countEl.textContent = `${visibleCount} địa điểm`;
+    if (visibleItems.length === 0) {
+      list.innerHTML = `
+        <div class="results-empty">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <p>Không tìm thấy địa điểm<br>phù hợp với bộ lọc.</p>
+        </div>`;
+    } else {
+      list.innerHTML = visibleItems.map(({ loc }) => {
+        const color = urgencyColors[loc.urgency] || "#22C55E";
+        const label = urgencyLabels[loc.urgency] || "";
+        return `
+          <div class="results-item" data-loc-id="${loc.id}">
+            <div class="results-item-dot" style="background:${color}"></div>
+            <div class="results-item-body">
+              <div class="results-item-title">${loc.title}</div>
+              ${loc.address ? `<div class="results-item-addr">${loc.address}</div>` : ""}
+              <div class="results-item-badges">
+                <span class="badge" style="background:${color}20;color:${color};">${label}</span>
+                ${loc.peopleCount ? `<span class="badge badge--muted">${loc.peopleCount} người</span>` : ""}
+              </div>
+            </div>
+          </div>`;
+      }).join("");
+
+      // Click handlers for each item
+      list.querySelectorAll(".results-item").forEach(el => {
+        el.addEventListener("click", () => {
+          const locId = el.dataset.locId;
+          const found = visibleItems.find(v => v.loc.id === locId);
+          if (found) {
+            mapInstance.flyTo([found.loc.lat, found.loc.lng], 16, { animate: true, duration: 0.8 });
+            found.marker.fire("click");
+            // On mobile, close results panel after selecting
+            if (window.innerWidth <= 768) {
+              panel.classList.remove("open");
+            }
+          }
+        });
+      });
+    }
+    panel.classList.add("open");
+  } else {
+    panel.classList.remove("open");
+  }
 }
 
 export const HomeController = {
@@ -224,6 +288,11 @@ function _initFilterAndLocate() {
         radius: 150, color: "#C0392B", fillOpacity: 0.15
       }).addTo(mapInstance);
     }, () => Toast.show("Không thể lấy vị trí.", "error"));
+  });
+
+  // Results panel close button
+  document.getElementById("results-panel-close")?.addEventListener("click", () => {
+    document.getElementById("results-panel")?.classList.remove("open");
   });
 }
 

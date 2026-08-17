@@ -84,6 +84,21 @@ const views = {
             
             <div class="map-sidebar" id="map-sidebar"></div>
             
+            <div class="results-panel" id="results-panel">
+              <div class="results-panel-header">
+                <div>
+                  <h3 class="results-panel-title">Kết quả lọc</h3>
+                  <span class="results-panel-count" id="results-panel-count">0 địa điểm</span>
+                </div>
+                <button class="sidebar-close" id="results-panel-close" title="Đóng">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="results-panel-list" id="results-panel-list"></div>
+            </div>
+            
             <div id="region-filter-modal" class="modal-backdrop" style="display:none; z-index: 10000;" onclick="if(event.target===this) this.style.display='none'">
               <div class="modal-box" style="width: 90%; max-width: 400px; padding: 20px;">
                 <h3 style="margin-bottom:15px; font-family:'Playfair Display',serif; font-size:1.3rem;">Lọc theo khu vực</h3>
