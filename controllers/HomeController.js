@@ -318,6 +318,7 @@ function _initMapWhenReady(locations, user, userData) {
         center: [16.047079, 108.206230],
         zoom: 6,
         zoomControl: false,
+        attributionControl: false,
         preferCanvas: true,
       });
       L.control.zoom({ position: "topright" }).addTo(mapInstance);
