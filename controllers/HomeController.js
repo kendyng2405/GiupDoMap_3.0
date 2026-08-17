@@ -12,6 +12,66 @@ let currentUrgency = "all";
 let currentProvince = "";
 let currentDistrict = "";
 
+// ---- Normalize helpers for flexible region matching ----
+function _removeDiacritics(str) {
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D");
+}
+
+function _normalizeForMatch(str) {
+  return _removeDiacritics(str.toLowerCase().trim())
+    .replace(/\s+/g, " ");
+}
+
+function _stripPrefix(name) {
+  // Remove common Vietnamese administrative prefixes
+  return name
+    .replace(/^(Tỉnh|Thành phố|Thành Phố|TP\.?|tp\.?)\s+/i, "")
+    .replace(/^(Phường|Xã|Thị trấn|Đặc khu|Dac khu)\s+/i, "")
+    .trim();
+}
+
+function _addressMatchesProvince(address, provinceName) {
+  if (!address || !provinceName) return false;
+  const addrNorm = _normalizeForMatch(address);
+  
+  // Try full name first
+  if (addrNorm.includes(_normalizeForMatch(provinceName))) return true;
+  
+  // Try without prefix (e.g. "Hồ Chí Minh" instead of "Thành phố Hồ Chí Minh")
+  const stripped = _stripPrefix(provinceName);
+  if (stripped && addrNorm.includes(_normalizeForMatch(stripped))) return true;
+  
+  // Common abbreviations
+  const strippedNorm = _normalizeForMatch(stripped);
+  if (strippedNorm === "ho chi minh" || strippedNorm === "hcm") {
+    if (addrNorm.includes("tp.hcm") || addrNorm.includes("tphcm") || addrNorm.includes("tp hcm") ||
+        addrNorm.includes("sai gon") || addrNorm.includes("saigon") ||
+        addrNorm.includes("ho chi minh")) return true;
+  }
+  if (strippedNorm === "ha noi") {
+    if (addrNorm.includes("ha noi") || addrNorm.includes("hanoi") || addrNorm.includes("hn")) return true;
+  }
+  if (strippedNorm === "da nang") {
+    if (addrNorm.includes("da nang") || addrNorm.includes("danang")) return true;
+  }
+  
+  return false;
+}
+
+function _addressMatchesWard(address, wardName) {
+  if (!address || !wardName) return false;
+  const addrNorm = _normalizeForMatch(address);
+  
+  // Try full name
+  if (addrNorm.includes(_normalizeForMatch(wardName))) return true;
+  
+  // Try without prefix
+  const stripped = _stripPrefix(wardName);
+  if (stripped && addrNorm.includes(_normalizeForMatch(stripped))) return true;
+  
+  return false;
+}
+
 function applyFilters() {
   if (!mapInstance) return;
   let visibleCount = 0;
@@ -19,9 +79,9 @@ function applyFilters() {
     const matchUrgency = currentUrgency === "all" || loc.urgency === currentUrgency;
     let matchRegion = true;
     if (currentProvince) {
-      matchRegion = (loc.address || "").toLowerCase().includes(currentProvince.toLowerCase());
+      matchRegion = _addressMatchesProvince(loc.address, currentProvince);
       if (matchRegion && currentDistrict) {
-        matchRegion = (loc.address || "").toLowerCase().includes(currentDistrict.toLowerCase());
+        matchRegion = _addressMatchesWard(loc.address, currentDistrict);
       }
     }
     const show = matchUrgency && matchRegion;
