@@ -244,6 +244,34 @@ const views = {
         </div>
     `,
 
+    // ---- CHÍNH SÁCH BẢO MẬT ----
+    "privacy-policy": () => `
+        <div style="max-width:800px; margin:0 auto; padding:40px 20px;">
+            <div style="background:var(--card); padding:40px; border-radius:12px; border:1px solid var(--border); box-shadow:0 4px 6px rgba(0,0,0,0.05);">
+                <h1 style="font-family:'Playfair Display',serif; color:var(--accent); margin-bottom:20px;">Chính sách bảo mật (Privacy Policy)</h1>
+                <p style="color:var(--text-muted); margin-bottom:30px;">Cập nhật lần cuối: 21/08/2026</p>
+                
+                <div style="color:var(--text); line-height:1.6;">
+                    <h3 style="margin-top:24px; margin-bottom:12px; font-weight:700;">1. Mục đích thu thập thông tin</h3>
+                    <p>Ứng dụng Trái Tim Việt thu thập thông tin cá nhân (bao gồm Email, Họ tên, Số điện thoại và hình ảnh đại diện từ tài khoản Google của bạn) nhằm mục đích xác thực người dùng, bảo vệ tính toàn vẹn của dữ liệu cứu trợ và cho phép bạn tạo, chỉnh sửa các địa điểm cần giúp đỡ trên bản đồ.</p>
+                    
+                    <h3 style="margin-top:24px; margin-bottom:12px; font-weight:700;">2. Phạm vi sử dụng thông tin</h3>
+                    <p>Chúng tôi sử dụng thông tin của bạn để hiển thị tư cách thành viên, ghi nhận người đã đăng tải địa điểm cứu trợ, và liên lạc trong trường hợp cần xác minh thông tin cứu trợ khẩn cấp. Thông tin cá nhân của bạn sẽ không bị bán hoặc chia sẻ cho bất kỳ bên thứ ba nào vì mục đích thương mại.</p>
+                    
+                    <h3 style="margin-top:24px; margin-bottom:12px; font-weight:700;">3. Quyền của người dùng</h3>
+                    <p>Bạn có quyền yêu cầu xem xét, chỉnh sửa hoặc xóa toàn bộ thông tin cá nhân và dữ liệu liên quan đến tài khoản của mình khỏi hệ thống Trái Tim Việt bất cứ lúc nào bằng cách liên hệ trực tiếp với quản trị viên qua email hỗ trợ.</p>
+                    
+                    <h3 style="margin-top:24px; margin-bottom:12px; font-weight:700;">4. Bảo mật dữ liệu</h3>
+                    <p>Toàn bộ dữ liệu của bạn được lưu trữ và bảo vệ an toàn trên hạ tầng của Google Cloud (Firebase). Chúng tôi áp dụng các tiêu chuẩn bảo mật nghiêm ngặt để ngăn chặn quyền truy cập trái phép.</p>
+                </div>
+                
+                <div style="margin-top:40px; text-align:center;">
+                    <a href="/home" class="btn btn--primary">Trở về Bản đồ</a>
+                </div>
+            </div>
+        </div>
+    `,
+
     // ---- QUÊN MẬT KHẨU ----
     "forgot-password": () => `
         <div class="auth-page">
