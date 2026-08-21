@@ -45,6 +45,7 @@ export const UserModel = {
       phone: data.phone || "", role: "member",
       points: 0, supportedLocations: [],
       photoURL: null,
+      agreedToPolicy: data.agreedToPolicy, // true for email auth, false for new Google auth
       createdAt: new Date().toISOString(),
     };
     await setDoc(doc(db, "users", uid), user);

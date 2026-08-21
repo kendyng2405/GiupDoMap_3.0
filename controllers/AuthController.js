@@ -83,7 +83,7 @@ export const AuthController = {
       try {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(cred.user, { displayName: fullName });
-        await UserModel.create(cred.user.uid, { email, fullName, phone });
+        await UserModel.create(cred.user.uid, { email, fullName, phone, agreedToPolicy: true });
         sendEmailVerification(cred.user).catch(() => {});
         router.navigate("/home");
         Toast.show("Tạo tài khoản thành công!");
@@ -157,6 +157,7 @@ async function _handleGoogleSignIn(btn) {
         email: user.email,
         fullName: user.displayName || "Google User",
         phone: user.phoneNumber || "",
+        agreedToPolicy: false,
       });
     }
     router.navigate("/home");
