@@ -140,10 +140,13 @@ const views = {
                 <h1 class="auth-title">Đăng nhập</h1>
                 <p class="auth-sub">Chào mừng trở lại. Tiếp tục hành trình yêu thương.</p>
                 
-                <div style="background:var(--bg2); padding:10px 14px; border-radius:8px; margin-bottom:20px; font-size:0.85rem; border-left:3px solid var(--accent); color:var(--text2);">
-                  <strong>Demo Tài khoản Test:</strong><br>
-                  Email: <code>admin@traitimviet.vn</code><br>
-                  Mật khẩu: <code>123456</code>
+                <div style="background:var(--bg2); padding:12px 16px; border-radius:8px; margin-bottom:20px; font-size:0.85rem; border-left:3px solid var(--accent); color:var(--text2); line-height:1.5;">
+                  <strong style="display:block; margin-bottom:6px; color:var(--text);">Tài khoản Demo (Test):</strong>
+                  <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div><strong>Founder:</strong><br><code>Founder_Tester@gmail.com</code><br><code>Founder123</code></div>
+                    <div><strong>Admin:</strong><br><code>Admin_Tester@gmail.com</code><br><code>Admin123</code></div>
+                    <div style="grid-column: span 2;"><strong>Member:</strong><br><code>Member_Tester@gmail.com</code><br><code>Member123</code></div>
+                  </div>
                 </div>
                 
                 <form id="login-form" novalidate>
