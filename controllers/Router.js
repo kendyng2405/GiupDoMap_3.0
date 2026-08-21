@@ -35,11 +35,19 @@ class Router {
       if (user) {
         try {
           this.currentUserData = await UserModel.findById(user.uid);
+          if (this.currentUserData && this.currentUserData.agreedToPolicy === false) {
+            document.getElementById("policy-modal").style.display = "flex";
+          } else {
+            const modal = document.getElementById("policy-modal");
+            if (modal) modal.style.display = "none";
+          }
         } catch(e) {
           this.currentUserData = null;
         }
       } else {
         this.currentUserData = null;
+        const modal = document.getElementById("policy-modal");
+        if (modal) modal.style.display = "none";
       }
       this._updateNavbar();
       if (!this._authReady) {
@@ -62,11 +70,52 @@ class Router {
       if (!href || !href.startsWith("/") || href.startsWith("//")) return;
       // Bỏ qua link mở tab mới
       if (a.target === "_blank") return;
+      
+      // Nếu user chưa đồng ý policy và đang ở modal chặn, thì không cho phép navigate bằng click internal links
+      if (this.currentUserData && this.currentUserData.agreedToPolicy === false) {
+        e.preventDefault();
+        return;
+      }
+
       e.preventDefault();
       this.navigate(href);
     });
 
+    // Lắng nghe nút đồng ý policy
+    document.getElementById("btn-agree-policy")?.addEventListener("click", async (e) => {
+      if (!this.currentUser) return;
+      const btn = e.target;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Đang xử lý...';
+      try {
+        await UserModel.update(this.currentUser.uid, { agreedToPolicy: true });
+        this.currentUserData.agreedToPolicy = true;
+        document.getElementById("policy-modal").style.display = "none";
+      } catch (err) {
+        console.error("Error accepting policy:", err);
+        btn.disabled = false;
+        btn.textContent = "Tôi đã đọc và đồng ý";
+      }
+    });
+
     await this.authReady;
+    this._updateNavbar();
+    this._renderCurrent();
+  }
+
+  async forceReloadUser() {
+    if (!this.currentUser) return;
+    try {
+      this.currentUserData = await UserModel.findById(this.currentUser.uid);
+      if (this.currentUserData && this.currentUserData.agreedToPolicy === false) {
+        document.getElementById("policy-modal").style.display = "flex";
+      } else {
+        const modal = document.getElementById("policy-modal");
+        if (modal) modal.style.display = "none";
+      }
+    } catch(e) {
+      this.currentUserData = null;
+    }
     this._updateNavbar();
     this._renderCurrent();
   }

@@ -140,6 +140,15 @@ const views = {
                 <h1 class="auth-title">Đăng nhập</h1>
                 <p class="auth-sub">Chào mừng trở lại. Tiếp tục hành trình yêu thương.</p>
                 
+                <div style="background:var(--bg2); padding:12px 16px; border-radius:8px; margin-bottom:20px; font-size:0.85rem; border-left:3px solid var(--accent); color:var(--text2); line-height:1.5;">
+                  <strong style="display:block; margin-bottom:6px; color:var(--text);">Tài khoản Demo (Test):</strong>
+                  <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div><strong>Founder:</strong><br><code>Founder_Tester@gmail.com</code><br><code>Founder123</code></div>
+                    <div><strong>Admin:</strong><br><code>Admin_Tester@gmail.com</code><br><code>Admin123</code></div>
+                    <div style="grid-column: span 2;"><strong>Member:</strong><br><code>Member_Tester@gmail.com</code><br><code>Member123</code></div>
+                  </div>
+                </div>
+                
                 <form id="login-form" novalidate>
                     <div class="form-group">
                         <label>Email</label>
@@ -162,6 +171,10 @@ const views = {
                 </form>
                 
                 <div class="auth-divider">hoặc</div>
+                <button type="button" id="btn-google-login" class="btn btn--ghost btn--full btn--lg" style="margin-bottom:20px; display:flex; align-items:center; justify-content:center;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="margin-right:8px"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                    Tiếp tục với Google
+                </button>
                 <div class="auth-switch">Chưa có tài khoản? <a href="/register">Đăng ký ngay</a></div>
                 <div class="auth-back"><a href="/home">&larr; Quay lại bản đồ</a></div>
             </div>
@@ -200,15 +213,69 @@ const views = {
                             </button>
                         </div>
                     </div>
+                    <div class="form-group">
+                        <label>Xác nhận mật khẩu</label>
+                        <div class="input-pw-wrap">
+                            <input type="password" name="confirmPassword" class="form-control" placeholder="Nhập lại mật khẩu" required>
+                            <button type="button" class="pw-toggle" onclick="const i=this.previousElementSibling;i.type=i.type==='password'?'text':'password'">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
                     <div style="height:4px;background:var(--border);border-radius:2px;margin-bottom:16px;overflow:hidden;">
                         <div id="pwd-bar-fill" style="height:100%;width:0;transition:all .3s;"></div>
                     </div>
+                    
+                    <div class="form-group" style="display:flex; align-items:flex-start; gap:8px; margin-bottom:20px;">
+                        <input type="checkbox" id="agree-policy" name="agreePolicy" required style="margin-top:4px; cursor:pointer;">
+                        <label for="agree-policy" style="font-size:0.85rem; font-weight:normal; line-height:1.4; color:var(--text-muted); cursor:pointer;">
+                            Tôi đồng ý với <a href="/privacy-policy" target="_blank" style="color:var(--accent); text-decoration:underline;">Chính sách bảo mật</a> và Điều khoản sử dụng của Trái Tim Việt.
+                        </label>
+                    </div>
+
                     <button type="submit" class="btn btn--primary btn--full btn--lg">Tạo tài khoản</button>
                 </form>
+                
+                <div class="auth-divider">hoặc</div>
+                <button type="button" id="btn-google-register" class="btn btn--ghost btn--full btn--lg" style="margin-bottom:20px; display:flex; align-items:center; justify-content:center;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="margin-right:8px"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                    Tiếp tục với Google
+                </button>
                 
                 <div class="auth-divider">đã có tài khoản?</div>
                 <a href="/login" class="btn btn--ghost btn--full">Đăng nhập</a>
                 <div class="auth-back"><a href="/home">&larr; Quay lại bản đồ</a></div>
+            </div>
+        </div>
+    `,
+
+    // ---- CHÍNH SÁCH BẢO MẬT ----
+    "privacy-policy": () => `
+        <div style="max-width:800px; margin:0 auto; padding:40px 20px;">
+            <div style="background:var(--card); padding:40px; border-radius:12px; border:1px solid var(--border); box-shadow:0 4px 6px rgba(0,0,0,0.05);">
+                <h1 style="font-family:'Playfair Display',serif; color:var(--accent); margin-bottom:20px;">Chính sách bảo mật (Privacy Policy)</h1>
+                <p style="color:var(--text-muted); margin-bottom:30px;">Cập nhật lần cuối: 21/08/2026</p>
+                
+                <div style="color:var(--text); line-height:1.6;">
+                    <h3 style="margin-top:24px; margin-bottom:12px; font-weight:700;">1. Mục đích thu thập thông tin</h3>
+                    <p>Ứng dụng Trái Tim Việt thu thập thông tin cá nhân (bao gồm Email, Họ tên, Số điện thoại và hình ảnh đại diện từ tài khoản Google của bạn) nhằm mục đích xác thực người dùng, bảo vệ tính toàn vẹn của dữ liệu cứu trợ và cho phép bạn tạo, chỉnh sửa các địa điểm cần giúp đỡ trên bản đồ.</p>
+                    
+                    <h3 style="margin-top:24px; margin-bottom:12px; font-weight:700;">2. Phạm vi sử dụng thông tin</h3>
+                    <p>Chúng tôi sử dụng thông tin của bạn để hiển thị tư cách thành viên, ghi nhận người đã đăng tải địa điểm cứu trợ, và liên lạc trong trường hợp cần xác minh thông tin cứu trợ khẩn cấp. Thông tin cá nhân của bạn sẽ không bị bán hoặc chia sẻ cho bất kỳ bên thứ ba nào vì mục đích thương mại.</p>
+                    
+                    <h3 style="margin-top:24px; margin-bottom:12px; font-weight:700;">3. Quyền của người dùng</h3>
+                    <p>Bạn có quyền yêu cầu xem xét, chỉnh sửa hoặc xóa toàn bộ thông tin cá nhân và dữ liệu liên quan đến tài khoản của mình khỏi hệ thống Trái Tim Việt bất cứ lúc nào bằng cách liên hệ trực tiếp với quản trị viên qua email hỗ trợ.</p>
+                    
+                    <h3 style="margin-top:24px; margin-bottom:12px; font-weight:700;">4. Bảo mật dữ liệu</h3>
+                    <p>Toàn bộ dữ liệu của bạn được lưu trữ và bảo vệ an toàn trên hạ tầng của Google Cloud (Firebase). Chúng tôi áp dụng các tiêu chuẩn bảo mật nghiêm ngặt để ngăn chặn quyền truy cập trái phép.</p>
+                </div>
+                
+                <div style="margin-top:40px; text-align:center;">
+                    <a href="/home" class="btn btn--primary">Trở về Bản đồ</a>
+                </div>
             </div>
         </div>
     `,

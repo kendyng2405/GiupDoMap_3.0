@@ -11,6 +11,7 @@ router
   .register("/login",                    (ctx) => AuthController.showLogin(ctx))
   .register("/register",                 (ctx) => AuthController.showRegister(ctx))
   .register("/forgot-password",          (ctx) => AuthController.showForgotPassword(ctx))
+  .register("/privacy-policy",           () => { import("./views/ViewEngine.js").then(m => m.renderView("privacy-policy")); document.body.scrollTop = 0; })
   .register("/profile",                  router.requireAuth((ctx) => ProfileController.show(ctx)))
   .register("/suggest",                  router.requireAuth((ctx) => SuggestionController.showForm(ctx)))
   .register("/admin/dashboard",          router.requireAdmin((ctx) => AdminController.dashboard(ctx)))
