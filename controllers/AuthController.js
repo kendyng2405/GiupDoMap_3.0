@@ -73,7 +73,9 @@ export const AuthController = {
       const email    = form.querySelector("[name=email]")?.value?.trim();
       const password = form.querySelector("[name=password]")?.value;
       const confirmPassword = form.querySelector("[name=confirmPassword]")?.value;
+      const agreePolicy = form.querySelector("[name=agreePolicy]")?.checked;
       if (!fullName || !phone || !email || !password || !confirmPassword) { Toast.show("Vui lòng điền đầy đủ thông tin.", "error"); return; }
+      if (!agreePolicy) { Toast.show("Vui lòng đồng ý với Điều khoản sử dụng.", "error"); return; }
       if (password !== confirmPassword) { Toast.show("Mật khẩu xác nhận không khớp.", "error"); return; }
       if (password.length < 6) { Toast.show("Mật Khẩu phải có ít nhất 6 ký tự.", "error"); return; }
       btn.disabled = true;

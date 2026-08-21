@@ -228,6 +228,14 @@ const views = {
                     <div style="height:4px;background:var(--border);border-radius:2px;margin-bottom:16px;overflow:hidden;">
                         <div id="pwd-bar-fill" style="height:100%;width:0;transition:all .3s;"></div>
                     </div>
+                    
+                    <div class="form-group" style="display:flex; align-items:flex-start; gap:8px; margin-bottom:20px;">
+                        <input type="checkbox" id="agree-policy" name="agreePolicy" required style="margin-top:4px; cursor:pointer;">
+                        <label for="agree-policy" style="font-size:0.85rem; font-weight:normal; line-height:1.4; color:var(--text-muted); cursor:pointer;">
+                            Tôi đồng ý với <a href="/privacy-policy" target="_blank" style="color:var(--accent); text-decoration:underline;">Chính sách bảo mật</a> và Điều khoản sử dụng của Trái Tim Việt.
+                        </label>
+                    </div>
+
                     <button type="submit" class="btn btn--primary btn--full btn--lg">Tạo tài khoản</button>
                 </form>
                 
