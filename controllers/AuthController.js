@@ -86,6 +86,7 @@ export const AuthController = {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(cred.user, { displayName: fullName });
         await UserModel.create(cred.user.uid, { email, fullName, phone, agreedToPolicy: true });
+        await router.forceReloadUser();
         sendEmailVerification(cred.user).catch(() => {});
         router.navigate("/home");
         Toast.show("Tạo tài khoản thành công!");
@@ -173,6 +174,7 @@ getRedirectResult(auth).then(async (result) => {
         phone: user.phoneNumber || "",
         agreedToPolicy: false,
       });
+      await router.forceReloadUser();
     }
     Toast.show("Đăng nhập Google thành công!");
     router.navigate("/home");

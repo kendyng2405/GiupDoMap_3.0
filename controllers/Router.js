@@ -103,6 +103,23 @@ class Router {
     this._renderCurrent();
   }
 
+  async forceReloadUser() {
+    if (!this.currentUser) return;
+    try {
+      this.currentUserData = await UserModel.findById(this.currentUser.uid);
+      if (this.currentUserData && this.currentUserData.agreedToPolicy === false) {
+        document.getElementById("policy-modal").style.display = "flex";
+      } else {
+        const modal = document.getElementById("policy-modal");
+        if (modal) modal.style.display = "none";
+      }
+    } catch(e) {
+      this.currentUserData = null;
+    }
+    this._updateNavbar();
+    this._renderCurrent();
+  }
+
   navigate(path) {
     if (window.location.pathname === path) {
       this._renderCurrent();
