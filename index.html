@@ -136,10 +136,6 @@
   });
 
   document.addEventListener('click', (e) => {
-    if (e.target.closest('#logout-btn') || e.target.closest('#mob-logout-btn')) {
-      e.preventDefault();
-      import('./controllers/AuthController.js').then(m => m.AuthController.logout());
-    }
     // Close menu on outside click
     if (!e.target.closest('#main-nav') && !e.target.closest('#burger-btn')) {
       document.getElementById('main-nav').classList.remove('open');
@@ -241,7 +237,6 @@
   </div>
 </div>
 
-<div id="toast" class="toast"></div>
 
 <!-- Policy Blocking Modal -->
 <div id="policy-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); z-index:99999; align-items:center; justify-content:center; backdrop-filter:blur(6px); padding:20px; box-sizing:border-box;">
