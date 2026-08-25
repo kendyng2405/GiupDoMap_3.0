@@ -64,12 +64,6 @@ class Router {
       if (!href || !href.startsWith("/") || href.startsWith("//")) return;
       // Bỏ qua link mở tab mới
       if (a.target === "_blank") return;
-      
-      // Nếu user chưa đồng ý policy và đang ở modal chặn, thì không cho phép navigate bằng click internal links NGOẠI TRỪ /privacy-policy
-      if (this.currentUserData && this.currentUserData.agreedToPolicy === false && href !== "/privacy-policy") {
-        e.preventDefault();
-        return;
-      }
 
       e.preventDefault();
       this.navigate(href);
@@ -183,6 +177,29 @@ class Router {
     });
 
     await handler({ user: this.currentUser, userData: this.currentUserData, params });
+
+    if (path === "/privacy-policy" && this.currentUserData && this.currentUserData.agreedToPolicy === false) {
+      const pageBtn = document.getElementById("btn-page-agree-policy");
+      if (pageBtn) {
+        pageBtn.style.display = "inline-block";
+        pageBtn.onclick = async () => {
+          pageBtn.disabled = true;
+          pageBtn.innerHTML = '<span class="spinner"></span> Đang xử lý...';
+          try {
+            await UserModel.update(this.currentUser.uid, { agreedToPolicy: true });
+            if (this.currentUserData) this.currentUserData.agreedToPolicy = true;
+            this._checkPolicyModal();
+            Toast.show("Đã xác nhận đồng ý điều khoản thành công!");
+            this.navigate("/home");
+          } catch (err) {
+            console.error("Error accepting policy from page:", err);
+            pageBtn.disabled = false;
+            pageBtn.textContent = "Tôi đồng ý với chính sách & Về bản đồ";
+            Toast.show("Không thể lưu xác nhận, vui lòng thử lại.", "error");
+          }
+        };
+      }
+    }
   }
 
   _updateNavbar() {

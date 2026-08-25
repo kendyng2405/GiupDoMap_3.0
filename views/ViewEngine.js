@@ -273,8 +273,9 @@ const views = {
                     <p>Toàn bộ dữ liệu của bạn được lưu trữ và bảo vệ an toàn trên hạ tầng của Google Cloud (Firebase). Chúng tôi áp dụng các tiêu chuẩn bảo mật nghiêm ngặt để ngăn chặn quyền truy cập trái phép.</p>
                 </div>
                 
-                <div style="margin-top:40px; text-align:center;">
-                    <a href="/home" class="btn btn--primary">Trở về Bản đồ</a>
+                <div style="margin-top:40px; text-align:center; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+                    <button id="btn-page-agree-policy" class="btn btn--primary btn--lg" style="display:none;">Tôi đồng ý với chính sách & Về bản đồ</button>
+                    <a href="/home" class="btn btn--ghost btn--lg">Trở về Bản đồ</a>
                 </div>
             </div>
         </div>
