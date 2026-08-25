@@ -2,6 +2,7 @@
 import { auth } from "../models/firebase.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { UserModel } from "../models/UserModel.js";
+import { Toast } from "../views/components/Toast.js";
 
 class Router {
   constructor() {
@@ -36,7 +37,8 @@ class Router {
         try {
           this.currentUserData = await UserModel.findById(user.uid);
           if (this.currentUserData && this.currentUserData.agreedToPolicy === false) {
-            document.getElementById("policy-modal").style.display = "flex";
+            const modal = document.getElementById("policy-modal");
+            if (modal) modal.style.display = "flex";
           } else {
             const modal = document.getElementById("policy-modal");
             if (modal) modal.style.display = "none";
@@ -89,12 +91,17 @@ class Router {
       btn.innerHTML = '<span class="spinner"></span> Đang xử lý...';
       try {
         await UserModel.update(this.currentUser.uid, { agreedToPolicy: true });
-        this.currentUserData.agreedToPolicy = true;
-        document.getElementById("policy-modal").style.display = "none";
+        if (this.currentUserData) this.currentUserData.agreedToPolicy = true;
+        const modal = document.getElementById("policy-modal");
+        if (modal) modal.style.display = "none";
+        btn.disabled = false;
+        btn.textContent = "Tôi đã đọc và đồng ý";
+        Toast.show("Đã xác nhận đồng ý điều khoản thành công!");
       } catch (err) {
         console.error("Error accepting policy:", err);
         btn.disabled = false;
         btn.textContent = "Tôi đã đọc và đồng ý";
+        Toast.show("Không thể lưu xác nhận, vui lòng thử lại.", "error");
       }
     });
 
