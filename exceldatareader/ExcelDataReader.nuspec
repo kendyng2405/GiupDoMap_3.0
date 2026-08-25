@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>ExcelDataReader</id>
+    <version>3.6.0</version>
+    <authors>ExcelDataReader developers</authors>
+    <owners>ExcelDataReader developers</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="expression">MIT</license>
+    <licenseUrl>https://licenses.nuget.org/MIT</licenseUrl>
+    <projectUrl>https://github.com/ExcelDataReader/ExcelDataReader</projectUrl>
+    <iconUrl>https://nugetgallery.blob.core.windows.net/icons/ExcelDataReader.2.1.png</iconUrl>
+    <description>Lightweight and fast library written in C# for reading Microsoft Excel files (2.0-2007).</description>
+    <tags>excel xls xlsx</tags>
+    <repository type="git" url="https://github.com/ExcelDataReader/ExcelDataReader.git" commit="e5b7d41b580603c866b9097496139080c0bba105" />
+    <dependencies>
+      <group targetFramework=".NETFramework2.0">
+        <dependency id="SharpZipLib" version="0.86.0" exclude="Build,Analyzers" />
+      </group>
+      <group targetFramework=".NETFramework4.5" />
+      <group targetFramework=".NETStandard1.3">
+        <dependency id="NETStandard.Library" version="1.6.1" exclude="Build,Analyzers" />
+        <dependency id="System.Data.Common" version="4.3.0" exclude="Build,Analyzers" />
+      </group>
+      <group targetFramework=".NETStandard2.0" />
+    </dependencies>
+    <frameworkAssemblies>
+      <frameworkAssembly assemblyName="System.Data" targetFramework=".NETFramework2.0, .NETFramework4.5" />
+      <frameworkAssembly assemblyName="System" targetFramework=".NETFramework2.0, .NETFramework4.5" />
+      <frameworkAssembly assemblyName="System.IO.Compression" targetFramework=".NETFramework4.5" />
+    </frameworkAssemblies>
+  </metadata>
+</package>
