@@ -8,7 +8,7 @@ import { getStorage } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-
 // Bảo mật thực sự nằm ở Firestore Security Rules
 const firebaseConfig = {
   apiKey: "AIzaSyAdu6cZxEdUHU3nu_LV-ix-_gsi2AUk7kg",
-  authDomain: "traitimviet.online",
+  authDomain: "kdhelpmap.firebaseapp.com",
   projectId: "kdhelpmap",
   storageBucket: "kdhelpmap.firebasestorage.app",
   messagingSenderId: "979831969947",
