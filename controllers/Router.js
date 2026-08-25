@@ -36,21 +36,13 @@ class Router {
       if (user) {
         try {
           this.currentUserData = await UserModel.findById(user.uid);
-          if (this.currentUserData && this.currentUserData.agreedToPolicy === false) {
-            const modal = document.getElementById("policy-modal");
-            if (modal) modal.style.display = "flex";
-          } else {
-            const modal = document.getElementById("policy-modal");
-            if (modal) modal.style.display = "none";
-          }
         } catch(e) {
           this.currentUserData = null;
         }
       } else {
         this.currentUserData = null;
-        const modal = document.getElementById("policy-modal");
-        if (modal) modal.style.display = "none";
       }
+      this._checkPolicyModal();
       this._updateNavbar();
       if (!this._authReady) {
         this._authReady = true;
@@ -73,8 +65,8 @@ class Router {
       // Bỏ qua link mở tab mới
       if (a.target === "_blank") return;
       
-      // Nếu user chưa đồng ý policy và đang ở modal chặn, thì không cho phép navigate bằng click internal links
-      if (this.currentUserData && this.currentUserData.agreedToPolicy === false) {
+      // Nếu user chưa đồng ý policy và đang ở modal chặn, thì không cho phép navigate bằng click internal links NGOẠI TRỪ /privacy-policy
+      if (this.currentUserData && this.currentUserData.agreedToPolicy === false && href !== "/privacy-policy") {
         e.preventDefault();
         return;
       }
@@ -110,19 +102,25 @@ class Router {
     this._renderCurrent();
   }
 
+  _checkPolicyModal() {
+    const modal = document.getElementById("policy-modal");
+    if (!modal) return;
+    const isPolicyPage = (this._getCurrentPath() === "/privacy-policy");
+    if (this.currentUserData && this.currentUserData.agreedToPolicy === false && !isPolicyPage) {
+      modal.style.display = "flex";
+    } else {
+      modal.style.display = "none";
+    }
+  }
+
   async forceReloadUser() {
     if (!this.currentUser) return;
     try {
       this.currentUserData = await UserModel.findById(this.currentUser.uid);
-      if (this.currentUserData && this.currentUserData.agreedToPolicy === false) {
-        document.getElementById("policy-modal").style.display = "flex";
-      } else {
-        const modal = document.getElementById("policy-modal");
-        if (modal) modal.style.display = "none";
-      }
     } catch(e) {
       this.currentUserData = null;
     }
+    this._checkPolicyModal();
     this._updateNavbar();
     this._renderCurrent();
   }
@@ -177,6 +175,8 @@ class Router {
 
     // Nếu trong lúc chờ đã có render mới hơn được gọi → huỷ cái này
     if (gen !== this._renderGen) return;
+
+    this._checkPolicyModal();
 
     document.querySelectorAll("[data-nav]").forEach(el => {
       el.classList.toggle("active", el.dataset.nav === path);
