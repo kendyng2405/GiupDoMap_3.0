@@ -1,0 +1,6 @@
+node_modules/
+android-twa/app/build/
+android-twa/.gradle/
+android-twa/app-release-aligned.apk
+.DS_Store
+Thumbs.db
