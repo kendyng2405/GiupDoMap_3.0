@@ -1,0 +1,62 @@
+name: Build iOS IPA (Trái Tim Việt)
+
+on:
+  push:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Dependencies
+        run: |
+          npm ci || npm install
+
+      - name: Prepare Web Assets
+        run: |
+          mkdir -p www
+          cp -r index.html app.js manifest.json sw.js 404.html controllers models views public www/
+
+      - name: Sync Capacitor iOS
+        run: |
+          npx cap sync ios
+
+      - name: Build iOS App with Xcode
+        working-directory: ios/App
+        run: |
+          xcodebuild clean build \
+            -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            PROVISIONING_PROFILE=""
+
+      - name: Package IPA
+        run: |
+          mkdir -p build/Payload
+          cp -r ios/App/build/Build/Products/Release-iphoneos/App.app build/Payload/
+          cd build
+          zip -r TraiTimViet.ipa Payload
+          cd ..
+          mv build/TraiTimViet.ipa ./TraiTimViet.ipa
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TraiTimViet-iOS-IPA
+          path: TraiTimViet.ipa
+          retention-days: 14
