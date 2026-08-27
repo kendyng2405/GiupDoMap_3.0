@@ -1,4 +1,10 @@
 node_modules/
+www/
+android/app/build/
+android/build/
+android/.gradle/
+android/capacitor-cordova-android-plugins/build/
+android/local.properties
 android-twa/app/build/
 android-twa/.gradle/
 android-twa/app-release-aligned.apk

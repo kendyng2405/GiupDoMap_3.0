@@ -56,13 +56,26 @@ export const NotificationController = {
 
 function _updateBadge() {
   const badge = document.getElementById("notif-badge");
+  const bottomBadge = document.getElementById("bottom-notif-badge");
   const unread = _notifs.filter(n => !n.read).length;
-  if (!badge) return;
-  if (unread > 0) {
-    badge.textContent = unread > 99 ? "99+" : unread;
-    badge.style.display = "flex";
-  } else {
-    badge.style.display = "none";
+  const text = unread > 99 ? "99+" : unread;
+  
+  if (badge) {
+    if (unread > 0) {
+      badge.textContent = text;
+      badge.style.display = "flex";
+    } else {
+      badge.style.display = "none";
+    }
+  }
+
+  if (bottomBadge) {
+    if (unread > 0) {
+      bottomBadge.textContent = text;
+      bottomBadge.style.display = "flex";
+    } else {
+      bottomBadge.style.display = "none";
+    }
   }
 }
 
