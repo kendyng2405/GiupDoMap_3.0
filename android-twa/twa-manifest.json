@@ -1,0 +1,43 @@
+{
+  "packageId": "online.traitimviet.app",
+  "host": "traitimviet.online",
+  "name": "Trái Tim Việt",
+  "launcherName": "Trái Tim Việt",
+  "display": "standalone",
+  "themeColor": "#9B111E",
+  "themeColorDark": "#1A1A2E",
+  "navigationColor": "#9B111E",
+  "navigationColorDark": "#1A1A2E",
+  "navigationDividerColor": "#9B111E",
+  "navigationDividerColorDark": "#1A1A2E",
+  "backgroundColor": "#FAF6F1",
+  "enableNotifications": false,
+  "startUrl": "/home",
+  "iconUrl": "https://traitimviet.online/public/icons/icon-512.png",
+  "maskableIconUrl": "https://traitimviet.online/public/icons/icon-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "d:\\giupDoMap2-main\\giupDoMap2-main\\android-twa\\traitimviet.keystore",
+    "alias": "traitimviet"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 2,
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://traitimviet.online/",
+  "minSdkVersion": 21,
+  "orientation": "portrait",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "displayOverride": [],
+  "appVersion": "1.0.0"
+}

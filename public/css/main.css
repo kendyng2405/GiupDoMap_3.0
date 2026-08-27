@@ -1001,3 +1001,100 @@ textarea.form-control { resize:vertical; min-height:90px; }
     height: 180px !important;
   }
 }
+
+/* ── Mobile Bottom Navigation Bar & Native App UX ──────── */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  z-index: 9990;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
+  padding-bottom: env(safe-area-inset-bottom);
+  justify-content: space-around;
+  align-items: center;
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  height: 100%;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.72rem;
+  font-weight: 500;
+  transition: var(--t);
+  position: relative;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.bottom-nav-item svg {
+  width: 22px;
+  height: 22px;
+  margin-bottom: 2px;
+  stroke: currentColor;
+  transition: var(--t);
+}
+
+.bottom-nav-item.active,
+.bottom-nav-item:hover {
+  color: var(--accent);
+}
+
+.bottom-nav-item.active svg {
+  stroke: var(--accent);
+  transform: translateY(-2px);
+}
+
+.bottom-nav-badge {
+  position: absolute;
+  top: 4px;
+  right: calc(50% - 18px);
+  background: var(--accent);
+  color: white;
+  font-size: 0.55rem;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  border: 1.5px solid var(--card);
+}
+
+@media (max-width: 768px) {
+  .bottom-nav {
+    display: flex;
+  }
+  .map-wrap {
+    height: calc(100vh - 66px - 60px);
+    height: calc(100dvh - 66px - 60px);
+  }
+  #app:not(:has(.map-wrap)) {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom)) !important;
+  }
+  /* Native Mobile App Touch Feel */
+  body {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: contain;
+  }
+  input, textarea, [contenteditable="true"] {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+}

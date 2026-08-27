@@ -7,11 +7,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
   <title>Trái Tim Việt — Bản đồ từ thiện</title>
   <meta name="description" content="Kết nối người muốn từ thiện đến những nơi cần hỗ trợ">
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#9B111E">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Trái Tim Việt">
+  <link rel="apple-touch-icon" href="/public/icons/icon-192.png">
   <script>
     (function(){
       const t = localStorage.getItem('ttv_theme') || 'light';
       document.documentElement.setAttribute('data-theme', t);
     })();
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
   </script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
   <link rel="stylesheet" href="/public/css/main.css">
@@ -115,6 +126,41 @@
 <div id="app" role="main"></div>
 <div id="toast-container" class="toast-container"></div>
 
+<!-- Mobile Bottom Navigation Bar -->
+<nav class="bottom-nav" id="bottom-nav">
+  <a href="/home" class="bottom-nav-item" data-nav="/home">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+      <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+      <line x1="8" y1="2" x2="8" y2="18"/>
+      <line x1="16" y1="6" x2="16" y2="22"/>
+    </svg>
+    <span>Bản đồ</span>
+  </a>
+  <a href="/suggest" class="bottom-nav-item" data-nav="/suggest" id="bottom-nav-suggest">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="16"/>
+      <line x1="8" y1="12" x2="16" y2="12"/>
+    </svg>
+    <span id="bottom-suggest-label">Đề xuất</span>
+  </a>
+  <button type="button" class="bottom-nav-item" id="bottom-nav-notif">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+      <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+    </svg>
+    <span id="bottom-notif-badge" class="bottom-nav-badge" style="display:none;">0</span>
+    <span>Thông báo</span>
+  </button>
+  <a href="/profile" class="bottom-nav-item" data-nav="/profile" id="bottom-nav-account">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+      <circle cx="12" cy="7" r="4"/>
+    </svg>
+    <span id="bottom-account-label">Tài khoản</span>
+  </a>
+</nav>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
 <script>
@@ -136,14 +182,16 @@
   });
 
   document.addEventListener('click', (e) => {
-    if (e.target.closest('#logout-btn') || e.target.closest('#mob-logout-btn')) {
-      e.preventDefault();
-      import('./controllers/AuthController.js').then(m => m.AuthController.logout());
-    }
     // Close menu on outside click
     if (!e.target.closest('#main-nav') && !e.target.closest('#burger-btn')) {
       document.getElementById('main-nav').classList.remove('open');
     }
+  });
+
+  // Connect bottom nav notification button
+  document.getElementById('bottom-nav-notif')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    import('/controllers/NotificationController.js').then(m => m.NotificationController.toggle());
   });
 
   window._updateNavbarUser = function(userData) {
@@ -167,6 +215,36 @@
     if (userLinkEl)     userLinkEl.style.display     = (isLoggedIn && !isPriv) ? 'inline' : 'none';
     // Hồ sơ cho admin/founder
     if (adminProfileEl) adminProfileEl.style.display = isPriv     ? 'inline' : 'none';
+
+    // Update Bottom Nav state
+    const btmSuggest = document.getElementById('bottom-nav-suggest');
+    const btmSuggestLabel = document.getElementById('bottom-suggest-label');
+    const btmAccount = document.getElementById('bottom-nav-account');
+    const btmAccountLabel = document.getElementById('bottom-account-label');
+
+    if (btmSuggest && btmSuggestLabel) {
+      if (isPriv) {
+        btmSuggest.setAttribute('href', '/admin/dashboard');
+        btmSuggest.dataset.nav = '/admin/dashboard';
+        btmSuggestLabel.textContent = 'Quản trị';
+      } else {
+        btmSuggest.setAttribute('href', '/suggest');
+        btmSuggest.dataset.nav = '/suggest';
+        btmSuggestLabel.textContent = 'Đề xuất';
+      }
+    }
+
+    if (btmAccount && btmAccountLabel) {
+      if (isLoggedIn) {
+        btmAccount.setAttribute('href', '/profile');
+        btmAccount.dataset.nav = '/profile';
+        btmAccountLabel.textContent = 'Hồ sơ';
+      } else {
+        btmAccount.setAttribute('href', '/login');
+        btmAccount.dataset.nav = '/login';
+        btmAccountLabel.textContent = 'Đăng nhập';
+      }
+    }
 
     // Sync mobile menu
     const mobGuest = document.getElementById('mob-nav-guest');
@@ -198,8 +276,6 @@
       const roleLabel = isFounder ? 'Người sáng lập' : isAdmin ? 'Người dẫn lửa' : (userData.rank?.name || 'Đồng Lòng');
       if (rankEl) rankEl.textContent = roleLabel;
       if (mobRankEl) mobRankEl.textContent = roleLabel;
-
-
 
       // Khởi động Notification Controller
       import('/controllers/NotificationController.js').then(m => {
@@ -241,6 +317,23 @@
   </div>
 </div>
 
-<script type="module" src="/app.js"></script>
+
+<!-- Policy Blocking Modal -->
+<div id="policy-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); z-index:99999; align-items:center; justify-content:center; backdrop-filter:blur(6px); padding:20px; box-sizing:border-box;">
+  <div style="background:var(--card, #fff); max-width:500px; width:100%; padding:30px; border-radius:16px; border:1px solid var(--border, #eee); box-shadow:0 20px 40px rgba(0,0,0,0.3); text-align:center;">
+    <div style="font-size:3rem; margin-bottom:12px;">📜</div>
+    <h2 style="font-family:'Playfair Display',serif; color:var(--accent, #9B111E); margin-top:0; margin-bottom:14px; font-size:1.6rem;">Điều khoản & Chính sách</h2>
+    <p style="color:var(--text, #333); margin-bottom:18px; line-height:1.6; font-size:0.95rem;">
+      Chào mừng bạn đến với <strong>Trái Tim Việt</strong>! Để tiếp tục sử dụng ứng dụng, vui lòng đọc và xác nhận đồng ý với Điều khoản & Chính sách bảo mật của chúng tôi.
+    </p>
+    <p style="margin-bottom:24px;">
+      <a href="/privacy-policy" target="_blank" style="color:var(--accent, #9B111E); font-weight:600; text-decoration:underline;">Đọc Chính sách bảo mật tại đây</a>
+    </p>
+    <button id="btn-agree-policy" class="btn btn--primary btn--full btn--lg" style="width:100%; padding:12px; font-size:1rem; font-weight:600; cursor:pointer;">Tôi đã đọc và đồng ý</button>
+  </div>
+</div>
+
+<!-- Entry Point -->
+<script type="module" src="./app.js"></script>
 </body>
 </html>

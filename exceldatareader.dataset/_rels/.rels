@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Type="http://schemas.microsoft.com/packaging/2010/07/manifest" Target="/ExcelDataReader.DataSet.nuspec" Id="Rb4202823b9cf4ec3" />
+  <Relationship Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="/package/services/metadata/core-properties/fab87ab942d44382bd56916c560d9aec.psmdcp" Id="Rf90ce7c9297e4be7" />
+</Relationships>

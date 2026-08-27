@@ -2,6 +2,7 @@
 import { auth } from "../models/firebase.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { UserModel } from "../models/UserModel.js";
+import { Toast } from "../views/components/Toast.js";
 
 class Router {
   constructor() {
@@ -41,6 +42,7 @@ class Router {
       } else {
         this.currentUserData = null;
       }
+      this._checkPolicyModal();
       this._updateNavbar();
       if (!this._authReady) {
         this._authReady = true;
@@ -62,11 +64,57 @@ class Router {
       if (!href || !href.startsWith("/") || href.startsWith("//")) return;
       // Bỏ qua link mở tab mới
       if (a.target === "_blank") return;
+
       e.preventDefault();
       this.navigate(href);
     });
 
+    // Lắng nghe nút đồng ý policy
+    document.getElementById("btn-agree-policy")?.addEventListener("click", async (e) => {
+      if (!this.currentUser) return;
+      const btn = e.target;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Đang xử lý...';
+      try {
+        await UserModel.update(this.currentUser.uid, { agreedToPolicy: true });
+        if (this.currentUserData) this.currentUserData.agreedToPolicy = true;
+        const modal = document.getElementById("policy-modal");
+        if (modal) modal.style.display = "none";
+        btn.disabled = false;
+        btn.textContent = "Tôi đã đọc và đồng ý";
+        Toast.show("Đã xác nhận đồng ý điều khoản thành công!");
+      } catch (err) {
+        console.error("Error accepting policy:", err);
+        btn.disabled = false;
+        btn.textContent = "Tôi đã đọc và đồng ý";
+        Toast.show("Không thể lưu xác nhận, vui lòng thử lại.", "error");
+      }
+    });
+
     await this.authReady;
+    this._updateNavbar();
+    this._renderCurrent();
+  }
+
+  _checkPolicyModal() {
+    const modal = document.getElementById("policy-modal");
+    if (!modal) return;
+    const isPolicyPage = (this._getCurrentPath() === "/privacy-policy");
+    if (this.currentUserData && this.currentUserData.agreedToPolicy === false && !isPolicyPage) {
+      modal.style.display = "flex";
+    } else {
+      modal.style.display = "none";
+    }
+  }
+
+  async forceReloadUser() {
+    if (!this.currentUser) return;
+    try {
+      this.currentUserData = await UserModel.findById(this.currentUser.uid);
+    } catch(e) {
+      this.currentUserData = null;
+    }
+    this._checkPolicyModal();
     this._updateNavbar();
     this._renderCurrent();
   }
@@ -122,11 +170,36 @@ class Router {
     // Nếu trong lúc chờ đã có render mới hơn được gọi → huỷ cái này
     if (gen !== this._renderGen) return;
 
+    this._checkPolicyModal();
+
     document.querySelectorAll("[data-nav]").forEach(el => {
       el.classList.toggle("active", el.dataset.nav === path);
     });
 
     await handler({ user: this.currentUser, userData: this.currentUserData, params });
+
+    if (path === "/privacy-policy" && this.currentUserData && this.currentUserData.agreedToPolicy === false) {
+      const pageBtn = document.getElementById("btn-page-agree-policy");
+      if (pageBtn) {
+        pageBtn.style.display = "inline-block";
+        pageBtn.onclick = async () => {
+          pageBtn.disabled = true;
+          pageBtn.innerHTML = '<span class="spinner"></span> Đang xử lý...';
+          try {
+            await UserModel.update(this.currentUser.uid, { agreedToPolicy: true });
+            if (this.currentUserData) this.currentUserData.agreedToPolicy = true;
+            this._checkPolicyModal();
+            Toast.show("Đã xác nhận đồng ý điều khoản thành công!");
+            this.navigate("/home");
+          } catch (err) {
+            console.error("Error accepting policy from page:", err);
+            pageBtn.disabled = false;
+            pageBtn.textContent = "Tôi đồng ý với chính sách & Về bản đồ";
+            Toast.show("Không thể lưu xác nhận, vui lòng thử lại.", "error");
+          }
+        };
+      }
+    }
   }
 
   _updateNavbar() {

@@ -1,0 +1,23 @@
+{
+  "appId": "online.traitimviet.app",
+  "appName": "Trái Tim Việt",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https",
+    "hostname": "traitimviet.online"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1200,
+      "launchAutoHide": true,
+      "backgroundColor": "#9B111E",
+      "androidSplashResourceName": "splash",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "backgroundColor": "#9B111E",
+      "style": "DARK"
+    }
+  }
+}
