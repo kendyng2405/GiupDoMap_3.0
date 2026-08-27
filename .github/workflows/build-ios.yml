@@ -16,11 +16,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install Dependencies
         run: |
-          npm ci || npm install
+          npm install
 
       - name: Prepare Web Assets
         run: |
@@ -35,7 +35,7 @@ jobs:
         working-directory: ios/App
         run: |
           xcodebuild clean build \
-            -workspace App.xcworkspace \
+            -project App.xcodeproj \
             -scheme App \
             -configuration Release \
             -sdk iphoneos \
